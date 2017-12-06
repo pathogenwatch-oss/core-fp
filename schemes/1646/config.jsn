@@ -1,0 +1,16 @@
+{
+  "name": "Renibacterium salmoninarum",
+  "minMatchCoverage": 80.0,
+  "overlapThreshold": 40,
+  "blastConfiguration": {
+    "gatheringEValue": 1e-35,
+    "gatheringPid": 80.0,
+    "maxMatches": 4000,
+    "otherOptions": [
+      "-best_hit_overhang",
+      "0.25",
+      "-best_hit_score_edge",
+      "0.05"
+    ]
+  }
+}
