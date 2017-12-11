@@ -349,6 +349,14 @@ class BlastParser {
     _.remove(hits, hit => overlaped.has(hit));
   }
 
+  _removeShortHits(hits) {
+    const minMatchCoverage = this.config.minMatchCoverage || 80;
+    _.remove(
+      hits,
+      ({ hitStart, hitEnd }) => Math.abs(hitStart - hitEnd) < minMatchCoverage
+    );
+  }
+
   async parse(xmlString) {
     const xml = await promisify(parseXml)(xmlString);
     const iterations = _.get(
@@ -368,6 +376,7 @@ async function main() {
   // const blastOutput = await promisify(fs.readFile)(`./${SCHEME}.xml`);
   const blastParser = new BlastParser(config);
   const hits = await blastParser.parse(blastOutput);
+  blastParser._removeShortHits(hits);
   blastParser._removeOverlappingHits(hits);
   _.forEach(hits, hit => blastParser.addMutations(hit));
   return _.groupBy(hits, "hitId");
@@ -388,4 +397,4 @@ module.exports = { BlastParser };
 // [DONE] Percent identity based on matching bases and the alignment length
 // [DONE] If complete hits against different gene families overlap by more than 40 bases then take the one with best pident
 // [DONE] Check for overlaps of any partial match by 40 bases and keep the one with the best pident
-// Only keep "big" partial matches bigger than "minMatchCoverage" percentage
+// [DONE] Only keep "big" partial matches bigger than "minMatchCoverage" percentage

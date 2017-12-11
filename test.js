@@ -381,9 +381,29 @@ test("Remove Overlapping hits", t => {
       ]
     }
   };
-  _.forEach(testCases, ({input, output: expected}, testName) => {
+  _.forEach(testCases, ({ input, output: expected }, testName) => {
     blastParser._removeOverlappingHits(input);
     const actual = input;
     t.deepEqual(actual, expected, testName);
+  });
+});
+
+test("Remove short hits", t => {
+  const testCases = [
+    {
+      config: { minMatchCoverage: 30 },
+      hits: [
+        { hitStart: 1, hitEnd: 100 },
+        { hitStart: 1, hitEnd: 20 },
+        { hitStart: 100, hitEnd: 1 },
+        { hitStart: 100, hitEnd: 80 }
+      ],
+      expected: [{ hitStart: 1, hitEnd: 100 }, { hitStart: 100, hitEnd: 1 }]
+    }
+  ];
+  _.forEach(testCases, ({ config, hits, expected }) => {
+    const blastParser = new BlastParser(config);
+    blastParser._removeShortHits(hits);
+    t.deepEqual(hits, expected);
   });
 });
