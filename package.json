@@ -4,9 +4,10 @@
   "description": "Generate core profiles for genome assemblies",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "ava"
   },
   "devDependencies": {
+    "ava": "^0.24.0",
     "eslint": "^4.4.1",
     "eslint-config-cgps": "github:imperialcollegelondon/eslint-config-cgps",
     "eslint-config-prettier": "^2.3.0",
@@ -14,5 +15,9 @@
     "prettier": "^1.5.3"
   },
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "debug": "^3.1.0",
+    "xml2js": "^0.4.19"
+  }
 }
