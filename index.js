@@ -293,7 +293,7 @@ class BlastParser {
   }
 
   _removeOverlappingHits(hits) {
-    // naive version - takes < 0.5 seconds
+    // this version takes 0.2 - 0.3 seconds
     const hitsOverlap = (hitA, hitB) => {
       if (hitA.queryId !== hitB.queryId) return 0;
       const [aStart, aEnd] = [hitA.queryStart, hitA.queryEnd].sort(
@@ -318,30 +318,32 @@ class BlastParser {
       throw new Error("Couldn't calculate overlap between hits");
     };
     const overlaped = new Set();
-    _.forEach(hits, (hitA, idx) => {
-      _.forEach(hits.slice(idx + 1), hitB => {
-        const overlap = hitsOverlap(hitA, hitB);
-        if (overlap >= 40) {
-          if (hitA.pIdent !== hitB.pIdent) {
-            overlaped.add(hitA.pIdent < hitB.pIdent ? hitA : hitB);
-          } else if (hitA.matchingBases !== hitB.matchingBases) {
-            overlaped.add(
-              hitA.matchingBases < hitB.matchingBases ? hitA : hitB
-            );
-          } else if (hitA.hitId !== hitB.hitId) {
-            // Keep the alphanumerically smaller
-            overlaped.add(hitA.hitId > hitB.hitId ? hitA : hitB);
-          } else if (hitA.queryStart !== hitB.queryStart) {
-            // Keep the one which starts first
-            overlaped.add(hitA.queryStart > hitB.queryStart ? hitA : hitB);
-          } else if (hitA.queryEnd !== hitB.queryEnd) {
-            // Keep the one which ends first
-            overlaped.add(hitA.queryEnd > hitB.queryEnd ? hitA : hitB);
-          } else {
-            // Keep the first one in the list (they're essentially duplicates)
-            overlaped.add(hitB);
+    _.forEach(_.groupBy(hits, "queryId"), contigHits => {
+      _.forEach(contigHits, (hitA, idx) => {
+        _.forEach(contigHits.slice(idx + 1), hitB => {
+          const overlap = hitsOverlap(hitA, hitB);
+          if (overlap >= 40) {
+            if (hitA.pIdent !== hitB.pIdent) {
+              overlaped.add(hitA.pIdent < hitB.pIdent ? hitA : hitB);
+            } else if (hitA.matchingBases !== hitB.matchingBases) {
+              overlaped.add(
+                hitA.matchingBases < hitB.matchingBases ? hitA : hitB
+              );
+            } else if (hitA.hitId !== hitB.hitId) {
+              // Keep the alphanumerically smaller
+              overlaped.add(hitA.hitId > hitB.hitId ? hitA : hitB);
+            } else if (hitA.queryStart !== hitB.queryStart) {
+              // Keep the one which starts first
+              overlaped.add(hitA.queryStart > hitB.queryStart ? hitA : hitB);
+            } else if (hitA.queryEnd !== hitB.queryEnd) {
+              // Keep the one which ends first
+              overlaped.add(hitA.queryEnd > hitB.queryEnd ? hitA : hitB);
+            } else {
+              // Keep the first one in the list (they're essentially duplicates)
+              overlaped.add(hitB);
+            }
           }
-        }
+        });
       });
     });
     _.remove(hits, hit => overlaped.has(hit));
