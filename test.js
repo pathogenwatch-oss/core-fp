@@ -210,3 +210,180 @@ test("Add Mutations", t => {
     t.deepEqual(testCase.mutations, expected, `${testName}: ${hitSequence} => ${querySequence}`);
   });
 });
+
+test("Percentage identity", t => {
+  const blastParser = new BlastParser();
+  t.is(
+    blastParser._pIdent({
+      matchingBases: 10,
+      alignmentLength: 100
+    }),
+    10
+  );
+});
+
+test("Remove Overlapping hits", t => {
+  const blastParser = new BlastParser();
+  const testCases = {
+    noOverlap: {
+      input: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo" },
+        { queryStart: 101, queryEnd: 200, queryId: "foo" }
+      ],
+      output: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo" },
+        { queryStart: 101, queryEnd: 200, queryId: "foo" }
+      ]
+    },
+    differentContigs: {
+      input: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo" },
+        { queryStart: 1, queryEnd: 100, queryId: "bar" }
+      ],
+      output: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo" },
+        { queryStart: 1, queryEnd: 100, queryId: "bar" }
+      ]
+    },
+    littleOverlap: {
+      input: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo" },
+        { queryStart: 91, queryEnd: 190, queryId: "foo" }
+      ],
+      output: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo" },
+        { queryStart: 91, queryEnd: 190, queryId: "foo" }
+      ]
+    },
+    overlapLeft: {
+      // AAAAA    <- Better
+      //    BBBBB
+      input: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90 },
+        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 80 }
+      ],
+      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90 }]
+    },
+    anotherOverlapLeft: {
+      // AAAAA
+      //    BBBBB <- Better
+      input: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
+        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 }
+      ],
+      output: [{ queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 }]
+    },
+    overlapMiddleBottom: {
+      // AAAAAAAAA
+      //   BBBBB <- Better
+      input: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
+        { queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 90 }
+      ],
+      output: [{ queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 90 }]
+    },
+    overlapMiddleTop: {
+      // AAAAAAAAA <- Better
+      //   BBBBB
+      input: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90 },
+        { queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 80 }
+      ],
+      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90 }]
+    },
+    moreMatches: {
+      //   AAAAA
+      // BBBBBBB <- Better
+      input: [
+        { queryStart: 41, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 60 },
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100 }
+      ],
+      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100 }]
+    },
+    hitName: {
+      // AAAAAAA <- Better
+      //   BBBBBBB
+      input: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" },
+        { queryStart: 41, queryEnd: 140, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "B" }
+      ],
+      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" }]
+    },
+    startFirst: {
+      // AAAAAAA <- Better
+      //   BBBBBBB
+      input: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" },
+        { queryStart: 41, queryEnd: 140, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" }
+      ],
+      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" }]
+    },
+    endFirst: {
+      // I'm not sure if this can actually happen...
+      // AAAAA
+      // BBBB  <- Better
+      input: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 50, matchingBases: 60, hitId: "A" },
+        { queryStart: 1, queryEnd: 80, queryId: "foo", pIdent: 50, matchingBases: 60, hitId: "A" }
+      ],
+      output: [{ queryStart: 1, queryEnd: 80, queryId: "foo", pIdent: 50, matchingBases: 60, hitId: "A" }]
+    },
+    identical: {
+      // AAAAA
+      // BBBBB <- Better
+      input: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" },
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" }
+      ],
+      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" }]
+    },
+    threeHits: {
+      input: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
+        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 },
+        { queryStart: 151, queryEnd: 250, queryId: "foo", pIdent: 85 }
+      ],
+      output: [
+        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 },
+        { queryStart: 151, queryEnd: 250, queryId: "foo", pIdent: 85 }
+      ]
+    },
+    middleOfThreeHits: {
+      input: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
+        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 },
+        { queryStart: 121, queryEnd: 220, queryId: "foo", pIdent: 85 }
+      ],
+      output: [{ queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 }]
+    },
+    lastOfThreeHits: {
+      input: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
+        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 },
+        { queryStart: 121, queryEnd: 220, queryId: "foo", pIdent: 95 }
+      ],
+      // It's not obvious whether we should keep the first hit; my suggestion is
+      // that this scenario is unlikely and this is the simplest solution to
+      // implement.
+      output: [{ queryStart: 121, queryEnd: 220, queryId: "foo", pIdent: 95 }]
+    },
+    fourHits: {
+      input: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
+        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 },
+        { queryStart: 121, queryEnd: 220, queryId: "foo", pIdent: 85 },
+        { queryStart: 181, queryEnd: 280, queryId: "foo", pIdent: 95 }
+      ],
+      // This is very unlikely but this makes some sort of sense.
+      output: [
+        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 },
+        { queryStart: 181, queryEnd: 280, queryId: "foo", pIdent: 95 }
+      ]
+    }
+  };
+  _.forEach(testCases, ({input, output: expected}, testName) => {
+    blastParser._removeOverlappingHits(input);
+    const actual = input;
+    t.deepEqual(actual, expected, testName);
+  });
+});

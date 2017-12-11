@@ -93,12 +93,18 @@ class BlastParser {
     this.config = config;
   }
 
+  _pIdent(hit) {
+    // Percentage identity of the hit
+    const { matchingBases, alignmentLength } = hit;
+    return 100 * (matchingBases / alignmentLength);
+  }
+
   reformatHit(queryId, hit) {
     // One hit might have more than one Hight Scoring Pair (HSP)
     const hitAccession = hit.Hit_accession[0];
     const hitId = hit.Hit_def[0];
     const highScoringPairs = _.get(hit, "Hit_hsps[0].Hsp", []);
-    return _.map(highScoringPairs, hsp => {
+    const hits = _.map(highScoringPairs, hsp => {
       return {
         hitAccession,
         hitId,
@@ -113,6 +119,10 @@ class BlastParser {
         alignmentLength: Number(hsp["Hsp_align-len"][0]),
         eValue: Number(hsp.Hsp_evalue[0])
       };
+    });
+    return _.map(hits, hit => {
+      hit.pIdent = this._pIdent(hit);
+      return hit
     });
   }
 
@@ -282,6 +292,61 @@ class BlastParser {
     return mutations;
   }
 
+  _removeOverlappingHits(hits) {
+    // naive version - takes < 0.5 seconds
+    const hitsOverlap = (hitA, hitB) => {
+      if (hitA.queryId !== hitB.queryId) return 0;
+      const [aStart, aEnd] = [hitA.queryStart, hitA.queryEnd].sort(
+        (a, b) => a - b
+      );
+      const [bStart, bEnd] = [hitB.queryStart, hitB.queryEnd].sort(
+        (a, b) => a - b
+      );
+      const sorted = [aStart, bStart, aEnd, bEnd].sort((a, b) => a - b);
+      if (_.isEqual([aStart, aEnd, bStart, bEnd], sorted))
+        return aEnd === bStart ? 1 : 0;
+      if (_.isEqual([bStart, bEnd, aStart, aEnd], sorted))
+        return bEnd === aStart ? 1 : 0;
+      if (_.isEqual([aStart, bStart, aEnd, bEnd], sorted))
+        return aEnd - bStart + 1;
+      if (_.isEqual([aStart, bStart, bEnd, aEnd], sorted))
+        return bEnd - bStart + 1;
+      if (_.isEqual([bStart, aStart, bEnd, aEnd], sorted))
+        return bEnd - aStart + 1;
+      if (_.isEqual([bStart, aStart, aEnd, bEnd], sorted))
+        return aEnd - aStart + 1;
+      throw new Error("Couldn't calculate overlap between hits");
+    };
+    const overlaped = new Set();
+    _.forEach(hits, (hitA, idx) => {
+      _.forEach(hits.slice(idx + 1), hitB => {
+        const overlap = hitsOverlap(hitA, hitB);
+        if (overlap >= 40) {
+          if (hitA.pIdent !== hitB.pIdent) {
+            overlaped.add(hitA.pIdent < hitB.pIdent ? hitA : hitB);
+          } else if (hitA.matchingBases !== hitB.matchingBases) {
+            overlaped.add(
+              hitA.matchingBases < hitB.matchingBases ? hitA : hitB
+            );
+          } else if (hitA.hitId !== hitB.hitId) {
+            // Keep the alphanumerically smaller
+            overlaped.add(hitA.hitId > hitB.hitId ? hitA : hitB);
+          } else if (hitA.queryStart !== hitB.queryStart) {
+            // Keep the one which starts first
+            overlaped.add(hitA.queryStart > hitB.queryStart ? hitA : hitB);
+          } else if (hitA.queryEnd !== hitB.queryEnd) {
+            // Keep the one which ends first
+            overlaped.add(hitA.queryEnd > hitB.queryEnd ? hitA : hitB);
+          } else {
+            // Keep the first one in the list (they're essentially duplicates)
+            overlaped.add(hitB);
+          }
+        }
+      });
+    });
+    _.remove(hits, hit => overlaped.has(hit));
+  }
+
   async parse(xmlString) {
     const xml = await promisify(parseXml)(xmlString);
     const iterations = _.get(
@@ -296,9 +361,11 @@ class BlastParser {
 async function main() {
   const config = await readConfig(SCHEME);
   const { blastConfiguration } = config;
-  const blastOutput = await runBlast(blastConfiguration);
+  // const blastOutput = await runBlast(blastConfiguration);
+  const blastOutput = await promisify(fs.readFile)("./gono.xml");
   const blastParser = new BlastParser(config);
   const hits = await blastParser.parse(blastOutput);
+  blastParser._removeOverlappingHits(hits);
   _.forEach(hits, hit => blastParser.addMutations(hit));
   return _.groupBy(hits, "hitId");
 }
@@ -315,12 +382,7 @@ module.exports = { BlastParser };
 // Add a r (aka reverse) field to each hit and reorder hitStart to be smaller than hitEnd
 // Only consider a partial match of a gene family if there are no alignments against the complete reference
 // Total length of core gene family in output "Reference length"
-// Percent identity based on matching bases and the alignment length
-// If complete hits against different gene families overlap by more than 40 bases then take the one with best pident
-// Check for overlaps of any partial match by 40 bases and keep the one with the best pident
-// mutations indexed by location in gene family and in the query sequence
-// If there are multiple partial matches, keep all of them
-// If there are multiple complete matches, keep all of them
-// If locations should be relative to the direction the sequences are given in
-// Substitutions, deletions etc should be reported in the orientation of the reference
+// [DONE] Percent identity based on matching bases and the alignment length
+// [DONE] If complete hits against different gene families overlap by more than 40 bases then take the one with best pident
+// [DONE] Check for overlaps of any partial match by 40 bases and keep the one with the best pident
 // Only keep "big" partial matches bigger than "minMatchCoverage" percentage
