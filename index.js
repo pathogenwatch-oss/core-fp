@@ -12,7 +12,7 @@ process.on("unhandledRejection", reason => {
   process.exit(1);
 });
 
-const SCHEME = 485;
+const SCHEME = Number(process.env.WGSA_ORGANISM_TAXID);
 
 async function readConfig(scheme) {
   const schemeConfigPath = path.join(__dirname, "schemes", String(scheme), "config.jsn");
@@ -363,8 +363,9 @@ class BlastParser {
 async function main() {
   const config = await readConfig(SCHEME);
   const { blastConfiguration } = config;
-  // const blastOutput = await runBlast(blastConfiguration);
-  const blastOutput = await promisify(fs.readFile)("./gono.xml");
+  const blastOutput = await runBlast(blastConfiguration);
+  // await promisify(fs.writeFile)(`./${SCHEME}.xml`, blastOutput);
+  // const blastOutput = await promisify(fs.readFile)(`./${SCHEME}.xml`);
   const blastParser = new BlastParser(config);
   const hits = await blastParser.parse(blastOutput);
   blastParser._removeOverlappingHits(hits);
