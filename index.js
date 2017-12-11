@@ -357,6 +357,17 @@ class BlastParser {
     );
   }
 
+  _removePartialHits(hits) {
+    // If a gene family has a hit which matches the whole gene, use that and discard any partial matches
+    const isCompleteMatch = ({ hitId, hitStart, hitEnd }) =>
+      Math.abs(hitStart - hitEnd) + 1 === this.config.geneLengths[hitId];
+    const complete = new Set();
+    _.forEach(hits, hit => {
+      if (isCompleteMatch(hit)) complete.add(hit.hitId);
+    });
+    _.remove(hits, hit => complete.has(hit.hitId) && !isCompleteMatch(hit));
+  }
+
   async parse(xmlString) {
     const xml = await promisify(parseXml)(xmlString);
     const iterations = _.get(
@@ -376,6 +387,7 @@ async function main() {
   // const blastOutput = await promisify(fs.readFile)(`./${SCHEME}.xml`);
   const blastParser = new BlastParser(config);
   const hits = await blastParser.parse(blastOutput);
+  blastParser._removePartialHits(hits);
   blastParser._removeShortHits(hits);
   blastParser._removeOverlappingHits(hits);
   _.forEach(hits, hit => blastParser.addMutations(hit));
@@ -392,7 +404,7 @@ if (require.main === module) {
 module.exports = { BlastParser };
 
 // Add a r (aka reverse) field to each hit and reorder hitStart to be smaller than hitEnd
-// Only consider a partial match of a gene family if there are no alignments against the complete reference
+// [DONE] Only consider a partial match of a gene family if there are no alignments against the complete reference
 // Total length of core gene family in output "Reference length"
 // [DONE] Percent identity based on matching bases and the alignment length
 // [DONE] If complete hits against different gene families overlap by more than 40 bases then take the one with best pident

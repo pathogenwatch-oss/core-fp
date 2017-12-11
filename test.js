@@ -407,3 +407,58 @@ test("Remove short hits", t => {
     t.deepEqual(hits, expected);
   });
 });
+
+test("Remove partial matches", t => {
+  const testCases = {
+    allUnique: {
+      config: {
+        geneLengths: {
+          foo: 100,
+          bar: 100,
+          baz: 100
+        }
+      },
+      hits: [
+        { hitId: "foo", hitStart: 1, hitEnd: 100 },
+        { hitId: "bar", hitStart: 1, hitEnd: 80 },
+        { hitId: "baz", hitStart: 1, hitEnd: 100 }
+      ],
+      expected: [
+        { hitId: "foo", hitStart: 1, hitEnd: 100 },
+        { hitId: "bar", hitStart: 1, hitEnd: 80 },
+        { hitId: "baz", hitStart: 1, hitEnd: 100 }
+      ]
+    },
+    duplicates: {
+      config: {
+        geneLengths: {
+          foo: 100,
+          bar: 100,
+          baz: 100
+        }
+      },
+      hits: [
+        { hitId: "foo", hitStart: 1, hitEnd: 100 },
+        { hitId: "foo", hitStart: 100, hitEnd: 1 },
+        { hitId: "bar", hitStart: 1, hitEnd: 80 },
+        { hitId: "bar", hitStart: 1, hitEnd: 100 },
+        { hitId: "bar", hitStart: 100, hitEnd: 1 },
+        { hitId: "baz", hitStart: 1, hitEnd: 80 },
+        { hitId: "baz", hitStart: 1, hitEnd: 70 }
+      ],
+      expected: [
+        { hitId: "foo", hitStart: 1, hitEnd: 100 },
+        { hitId: "foo", hitStart: 100, hitEnd: 1 },
+        { hitId: "bar", hitStart: 1, hitEnd: 100 },
+        { hitId: "bar", hitStart: 100, hitEnd: 1 },
+        { hitId: "baz", hitStart: 1, hitEnd: 80 },
+        { hitId: "baz", hitStart: 1, hitEnd: 70 }
+      ]
+    }
+  };
+  _.forEach(testCases, ({ config, hits, expected }, testName) => {
+    const blastParser = new BlastParser(config);
+    blastParser._removePartialHits(hits);
+    t.deepEqual(hits, expected, testName);
+  });
+});
