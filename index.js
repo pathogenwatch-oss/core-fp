@@ -2,9 +2,9 @@ const path = require("path");
 const fs = require("fs");
 const logger = require("debug");
 const { promisify } = require("util");
-const _ = require("lodash");
 
 const { runBlast, BlastParser } = require("./src/Blast");
+const { Core } = require("./src/Core");
 
 process.on("unhandledRejection", reason => {
   logger("error:unhandledRejection")(reason);
@@ -28,11 +28,8 @@ async function main() {
   // const blastOutput = await promisify(fs.readFile)(`./${SCHEME}.xml`);
   const blastParser = new BlastParser(config);
   const hits = await blastParser.parse(blastOutput);
-  blastParser._removePartialHits(hits);
-  blastParser._removeShortHits(hits);
-  blastParser._removeOverlappingHits(hits);
-  _.forEach(hits, hit => blastParser.addMutations(hit));
-  return _.groupBy(hits, "hitId");
+  const coreAnalyser = new Core(config);
+  return coreAnalyser.getCore(hits);
 }
 
 if (require.main === module) {

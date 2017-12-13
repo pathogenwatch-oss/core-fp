@@ -1,17 +1,17 @@
 const { test } = require("ava");
-const { BlastParser } = require("../src/Blast");
+const { Core } = require("../src/Core");
 const _ = require("lodash");
 
 test("Compliment", t => {
-  const blastParser = new BlastParser();
-  t.is(blastParser._compliment("acgt"), "acgt");
-  t.is(blastParser._compliment("aaaa"), "tttt");
-  t.is(blastParser._compliment("acgtACGT"), "ACGTacgt");
-  t.is(blastParser._compliment("an-A"), "T-nt");
+  const coreAnalyser = new Core();
+  t.is(coreAnalyser._compliment("acgt"), "acgt");
+  t.is(coreAnalyser._compliment("aaaa"), "tttt");
+  t.is(coreAnalyser._compliment("acgtACGT"), "ACGTacgt");
+  t.is(coreAnalyser._compliment("an-A"), "T-nt");
 });
 
 test("Compare Alignment", t => {
-  const blastParser = new BlastParser();
+  const coreAnalyser = new Core();
   const testCases = [
     { seq: "TTT--TTTT" },
     { seq: "TTT--ATTT", expected: [{t: "S", wt: "T",  mut: "A",   refOffset: 3, queryOffset: 3}]},
@@ -30,13 +30,13 @@ test("Compare Alignment", t => {
   ];
   const { seq: reference } = testCases.shift();
   _.forEach(testCases, ({ seq, expected }) => {
-    const actual = blastParser._compareAlignment(reference, seq);
+    const actual = coreAnalyser._compareAlignment(reference, seq);
     t.deepEqual(actual, expected, `${reference} => ${seq}`);
   });
 });
 
 test("Add Mutations", t => {
-  const blastParser = new BlastParser();
+  const coreAnalyser = new Core();
   const testCases = {
     forwardSubstitution: {
       hitStart: 1,
@@ -206,15 +206,15 @@ test("Add Mutations", t => {
   _.forEach(testCases, (testCase, testName) => {
     const { mutations: expected, hitSequence, querySequence } = testCase;
     delete testCase.mutations;
-    blastParser.addMutations(testCase);
+    coreAnalyser.addMutations(testCase);
     t.deepEqual(testCase.mutations, expected, `${testName}: ${hitSequence} => ${querySequence}`);
   });
 });
 
 test("Percentage identity", t => {
-  const blastParser = new BlastParser();
+  const coreAnalyser = new Core();
   t.is(
-    blastParser._pIdent({
+    coreAnalyser._pIdent({
       matchingBases: 10,
       alignmentLength: 100
     }),
@@ -223,7 +223,7 @@ test("Percentage identity", t => {
 });
 
 test("Remove Overlapping hits", t => {
-  const blastParser = new BlastParser();
+  const coreAnalyser = new Core();
   const testCases = {
     noOverlap: {
       input: [
@@ -382,7 +382,7 @@ test("Remove Overlapping hits", t => {
     }
   };
   _.forEach(testCases, ({ input, output: expected }, testName) => {
-    blastParser._removeOverlappingHits(input);
+    coreAnalyser._removeOverlappingHits(input);
     const actual = input;
     t.deepEqual(actual, expected, testName);
   });
@@ -402,8 +402,8 @@ test("Remove short hits", t => {
     }
   ];
   _.forEach(testCases, ({ config, hits, expected }) => {
-    const blastParser = new BlastParser(config);
-    blastParser._removeShortHits(hits);
+    const coreAnalyser = new Core(config);
+    coreAnalyser._removeShortHits(hits);
     t.deepEqual(hits, expected);
   });
 });
@@ -457,8 +457,8 @@ test("Remove partial matches", t => {
     }
   };
   _.forEach(testCases, ({ config, hits, expected }, testName) => {
-    const blastParser = new BlastParser(config);
-    blastParser._removePartialHits(hits);
+    const coreAnalyser = new Core(config);
+    coreAnalyser._removePartialHits(hits);
     t.deepEqual(hits, expected, testName);
   });
 });
