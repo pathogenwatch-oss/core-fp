@@ -56,10 +56,16 @@ class StreamCollector extends Writable {
 
 async function runBlast(blastConfiguration) {
   const BLAST_DB = path.join(__dirname, "databases", String(SCHEME), "core.db");
-  const blastCommand = `blastn -task blastn -outfmt 5 -query - -db ${BLAST_DB} -perc_identity ${blastConfiguration.gatheringPid} ` + 
-                       `-evalue ${blastConfiguration.gatheringEValue} -num_alignments ${blastConfiguration.maxMatches}`;
+  const blastCommand = [
+    "blastn -task blastn -outfmt 5 -query -",
+    "-db", BLAST_DB,
+    "-perc_identity", blastConfiguration.gatheringPid,
+    "-evalue", blastConfiguration.gatheringEValue,
+    "-num_alignments", blastConfiguration.maxMatches
+  ]
+  blastCommand.push(...(blastConfiguration.otherOptions || []));
   const whenBlastFinished = defer();
-  const shell = spawn(blastCommand, { shell: true });
+  const shell = spawn(blastCommand.join(" "), { shell: true });
 
   // If `blastn` doesn't exist, there's a race between the input stream and the
   // spawned process to error.  Look for both.
@@ -410,3 +416,4 @@ module.exports = { BlastParser };
 // [DONE] If complete hits against different gene families overlap by more than 40 bases then take the one with best pident
 // [DONE] Check for overlaps of any partial match by 40 bases and keep the one with the best pident
 // [DONE] Only keep "big" partial matches bigger than "minMatchCoverage" percentage
+// [DONE] Use the additional blast options
