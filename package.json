@@ -4,7 +4,7 @@
   "description": "Generate core profiles for genome assemblies",
   "main": "index.js",
   "scripts": {
-    "test": "ava"
+    "test": "ava tests/"
   },
   "devDependencies": {
     "ava": "^0.24.0",

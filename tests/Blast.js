@@ -1,5 +1,5 @@
 const { test } = require("ava");
-const { BlastParser } = require("./index");
+const { BlastParser } = require("../src/Blast");
 const _ = require("lodash");
 
 test("Compliment", t => {
