@@ -244,12 +244,28 @@ class Core {
     _.remove(hits, hit => complete.has(hit.hitId) && !isCompleteMatch(hit));
   }
 
-  getCore(hits) {
+  getFamiliesWithHits(hits) {
+    return hits.reduce((families, { hitId }) => families.add(hitId), new Set());
+  }
+
+  getCore(hits, summaryData) {
+    const { assemblyId, speciesId } = summaryData;
     this._removePartialHits(hits);
     this._removeShortHits(hits);
     this._removeOverlappingHits(hits);
     _.forEach(hits, hit => this.addMutations(hit));
-    return _.groupBy(hits, "hitId");
+    const familiesMatches = this.getFamiliesWithHits(hits).size;
+    const coreSummary = {
+      assemblyId,
+      speciesId,
+      familiesMatches
+    };
+    return {
+      coreSummary,
+      coreProfile: {
+        coreProfile: _.groupBy(hits, "hitId")
+      }
+    };
   }
 }
 

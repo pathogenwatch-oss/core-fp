@@ -470,3 +470,10 @@ test("Remove partial matches", t => {
     t.deepEqual(hits, expected, testName);
   });
 });
+
+test("Families With Hits", t => {
+  const coreAnalyser = new Core();
+  const hits = [{ hitId: "geneA" }, { hitId: "geneA" }, { hitId: "geneC" }];
+  const expected = new Set(["geneA", "geneC"]);
+  t.deepEqual(coreAnalyser.getFamiliesWithHits(hits), expected);
+});
