@@ -473,11 +473,18 @@ test("Remove partial matches", t => {
   });
 });
 
-test("Families With Hits", t => {
+test("Get Hit Stats", t => {
   const coreAnalyser = new Core();
-  const hits = [{ hitId: "geneA" }, { hitId: "geneA" }, { hitId: "geneC" }];
-  const expected = new Set(["geneA", "geneC"]);
-  t.deepEqual(coreAnalyser.getFamiliesWithHits(hits), expected);
+  const hits = [
+    { hitId: "geneA", full: true },
+    { hitId: "geneA", full: false },
+    { hitId: "geneC", full: false }
+  ];
+  const expected = {
+    familiesMatched: 2,
+    completeAlleles: 1
+  };
+  t.deepEqual(coreAnalyser.getHitStats(hits), expected);
 });
 
 test("Get Core", t => {
@@ -508,7 +515,8 @@ test("Get Core", t => {
   const actual = coreAnalyser.getCore(hits, summaryData);
   t.is(actual.coreSummary.assemblyId, "foo");
   t.is(actual.coreSummary.speciesId, 123);
-  t.is(actual.coreSummary.familiesMatches, 3);
+  t.is(actual.coreSummary.familiesMatched, 3);
+  t.is(actual.coreSummary.completeAlleles, 2);
   t.is(coreAnalyser.addMutations.callCount, 5);
   t.true(coreAnalyser._removeOverlappingHits.calledOnce);
 });

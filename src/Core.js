@@ -249,8 +249,17 @@ class Core {
     _.remove(hits, hit => complete.has(hit.hitId) && !hit.full);
   }
 
-  getFamiliesWithHits(hits) {
-    return hits.reduce((families, { hitId }) => families.add(hitId), new Set());
+  getHitStats(hits) {
+    const familiesMatchedSet = new Set();
+    const completeAllelesSet = new Set();
+    _.forEach(hits, ({ hitId, full }) => {
+      familiesMatchedSet.add(hitId);
+      if (full) completeAllelesSet.add(hitId);
+    });
+    return {
+      familiesMatched: familiesMatchedSet.size,
+      completeAlleles: completeAllelesSet.size
+    };
   }
 
   getCore(hits, summaryData) {
@@ -259,11 +268,12 @@ class Core {
     this._removeShortHits(hits);
     this._removeOverlappingHits(hits);
     _.forEach(hits, hit => this.addMutations(hit));
-    const familiesMatches = this.getFamiliesWithHits(hits).size;
+    const { familiesMatched, completeAlleles } = this.getHitStats(hits);
     const coreSummary = {
       assemblyId,
       speciesId,
-      familiesMatches
+      familiesMatched, // Genes with one or more hit
+      completeAlleles // Genes with one of more hit against the full reference
     };
     return {
       coreSummary,
