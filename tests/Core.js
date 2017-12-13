@@ -53,11 +53,12 @@ test("Add Mutations", t => {
           rI: 4,
           qI: 104
         }
-      ]
+      ],
+      reverse: false
     },
     reverseSubstitution: {
-      hitStart: 5,
-      hitEnd: 1,
+      hitStart: 1,
+      hitEnd: 5,
       hitSequence: "TTTTT",
       querySequence: "TTTGT",
       queryStart: 101,
@@ -70,7 +71,8 @@ test("Add Mutations", t => {
           rI: 2,
           qI: 104
         }
-      ]
+      ],
+      reverse: true
     },
     forwardInsertion: {
       hitStart: 1,
@@ -87,11 +89,12 @@ test("Add Mutations", t => {
           rI: 3,
           qI: 104
         }
-      ]
+      ],
+      reverse: false
     },
     reverseInsertion: {
-      hitStart: 4,
-      hitEnd: 1,
+      hitStart: 1,
+      hitEnd: 4,
       hitSequence: "TTT-T",
       querySequence: "TTTGT",
       queryStart: 101,
@@ -104,7 +107,8 @@ test("Add Mutations", t => {
           rI: 1,
           qI: 104
         }
-      ]
+      ],
+      reverse: true
     },
     forwardDeletion: {
       hitStart: 1,
@@ -121,11 +125,12 @@ test("Add Mutations", t => {
           rI: 4,
           qI: 103
         }
-      ]
+      ],
+      reverse: false
     },
     reverseDeletion: {
-      hitStart: 5,
-      hitEnd: 1,
+      hitStart: 1,
+      hitEnd: 5,
       hitSequence: "TTTTT",
       querySequence: "TTT-T",
       queryStart: 101,
@@ -138,11 +143,12 @@ test("Add Mutations", t => {
           rI: 2,
           qI: 104
         }
-      ]
+      ],
+      reverse: true
     },
     multiSubstitution: {
-      hitStart: 8,
-      hitEnd: 1,
+      hitStart: 1,
+      hitEnd: 8,
       hitSequence: "TTTTTTT",
       querySequence: "TCCGACT",
       queryStart: 101,
@@ -155,11 +161,12 @@ test("Add Mutations", t => {
           rI: 2,
           qI: 107
         }
-      ]
+      ],
+      reverse: true
     },
     combination: {
-      hitStart: 8,
-      hitEnd: 1,
+      hitStart: 1,
+      hitEnd: 8,
       hitSequence: "TT--TTTTTT",
       querySequence: "TGCCA--TCG",
       queryStart: 101,
@@ -200,7 +207,8 @@ test("Add Mutations", t => {
           rI: 7,
           qI: 102
         }
-      ]
+      ],
+      reverse: true
     }
   };
   _.forEach(testCases, (testCase, testName) => {
@@ -393,12 +401,12 @@ test("Remove short hits", t => {
     {
       config: { minMatchCoverage: 30 },
       hits: [
-        { hitStart: 1, hitEnd: 100 },
-        { hitStart: 1, hitEnd: 20 },
-        { hitStart: 100, hitEnd: 1 },
-        { hitStart: 100, hitEnd: 80 }
+        { hitStart: 1, hitEnd: 100, reverse: false },
+        { hitStart: 1, hitEnd: 20, reverse: false },
+        { hitStart: 1, hitEnd: 100, reverse: true },
+        { hitStart: 80, hitEnd: 100, reverse: true }
       ],
-      expected: [{ hitStart: 1, hitEnd: 100 }, { hitStart: 100, hitEnd: 1 }]
+      expected: [{ hitStart: 1, hitEnd: 100, reverse: false }, { hitStart: 1, hitEnd: 100, reverse: true }]
     }
   ];
   _.forEach(testCases, ({ config, hits, expected }) => {
@@ -419,14 +427,14 @@ test("Remove partial matches", t => {
         }
       },
       hits: [
-        { hitId: "foo", hitStart: 1, hitEnd: 100 },
-        { hitId: "bar", hitStart: 1, hitEnd: 80 },
-        { hitId: "baz", hitStart: 1, hitEnd: 100 }
+        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: false },
+        { hitId: "bar", hitStart: 1, hitEnd: 80, reverse: false },
+        { hitId: "baz", hitStart: 1, hitEnd: 100, reverse: false }
       ],
       expected: [
-        { hitId: "foo", hitStart: 1, hitEnd: 100 },
-        { hitId: "bar", hitStart: 1, hitEnd: 80 },
-        { hitId: "baz", hitStart: 1, hitEnd: 100 }
+        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: false },
+        { hitId: "bar", hitStart: 1, hitEnd: 80, reverse: false },
+        { hitId: "baz", hitStart: 1, hitEnd: 100, reverse: false }
       ]
     },
     duplicates: {
@@ -438,21 +446,21 @@ test("Remove partial matches", t => {
         }
       },
       hits: [
-        { hitId: "foo", hitStart: 1, hitEnd: 100 },
-        { hitId: "foo", hitStart: 100, hitEnd: 1 },
-        { hitId: "bar", hitStart: 1, hitEnd: 80 },
-        { hitId: "bar", hitStart: 1, hitEnd: 100 },
-        { hitId: "bar", hitStart: 100, hitEnd: 1 },
-        { hitId: "baz", hitStart: 1, hitEnd: 80 },
-        { hitId: "baz", hitStart: 1, hitEnd: 70 }
+        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: false },
+        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: true },
+        { hitId: "bar", hitStart: 1, hitEnd: 80, reverse: false },
+        { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: false },
+        { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: true },
+        { hitId: "baz", hitStart: 1, hitEnd: 80, reverse: false },
+        { hitId: "baz", hitStart: 1, hitEnd: 70, reverse: false }
       ],
       expected: [
-        { hitId: "foo", hitStart: 1, hitEnd: 100 },
-        { hitId: "foo", hitStart: 100, hitEnd: 1 },
-        { hitId: "bar", hitStart: 1, hitEnd: 100 },
-        { hitId: "bar", hitStart: 100, hitEnd: 1 },
-        { hitId: "baz", hitStart: 1, hitEnd: 80 },
-        { hitId: "baz", hitStart: 1, hitEnd: 70 }
+        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: false },
+        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: true },
+        { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: false },
+        { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: true },
+        { hitId: "baz", hitStart: 1, hitEnd: 80, reverse: false },
+        { hitId: "baz", hitStart: 1, hitEnd: 70, reverse: false }
       ]
     }
   };

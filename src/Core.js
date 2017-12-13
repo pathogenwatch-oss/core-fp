@@ -58,12 +58,10 @@ class Core {
   // Mutation  {t: "S", wt: "G", mut: "A", rI: 8, qI: 13}
 
   addMutations(hit) {
-    const { hitSequence, hitStart, hitEnd } = hit;
+    const { hitSequence, hitStart, reverse } = hit;
     const { querySequence, queryStart, queryEnd } = hit;
     let mutations;
-    let reversed = false;
-    if (hitEnd < hitStart) {
-      reversed = true;
+    if (reverse) {
       mutations = this._compareAlignment(
         this._compliment(hitSequence),
         this._compliment(querySequence)
@@ -74,8 +72,8 @@ class Core {
     hit.mutations = mutations;
     _.forEach(mutations, m => {
       const { refOffset, queryOffset } = m;
-      m.rI = reversed ? hitEnd + refOffset : hitStart + refOffset;
-      m.qI = reversed ? queryEnd - queryOffset : queryStart + queryOffset;
+      m.rI = reverse ? hitStart + refOffset : hitStart + refOffset;
+      m.qI = reverse ? queryEnd - queryOffset : queryStart + queryOffset;
       delete m.refOffset;
       delete m.queryOffset;
     });

@@ -63,12 +63,16 @@ class BlastParser {
     const hitId = hit.Hit_def[0];
     const highScoringPairs = _.get(hit, "Hit_hsps[0].Hsp", []);
     const hits = _.map(highScoringPairs, hsp => {
+      const start = Number(hsp["Hsp_hit-from"][0]);
+      const end = Number(hsp["Hsp_hit-to"][0]);
+      const reverse = start > end;
       return {
         hitAccession,
         hitId,
         hitSequence: hsp.Hsp_hseq[0],
-        hitStart: Number(hsp["Hsp_hit-from"][0]),
-        hitEnd: Number(hsp["Hsp_hit-to"][0]),
+        hitStart: reverse ? end : start,
+        hitEnd: reverse ? start : end,
+        reverse,
         queryId,
         querySequence: hsp.Hsp_qseq[0],
         queryStart: Number(hsp["Hsp_query-from"][0]),
