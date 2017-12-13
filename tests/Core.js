@@ -432,9 +432,9 @@ test("Remove partial matches", t => {
         { hitId: "baz", hitStart: 1, hitEnd: 100, reverse: false }
       ],
       expected: [
-        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: false },
-        { hitId: "bar", hitStart: 1, hitEnd: 80, reverse: false },
-        { hitId: "baz", hitStart: 1, hitEnd: 100, reverse: false }
+        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: false, full: true },
+        { hitId: "bar", hitStart: 1, hitEnd: 80, reverse: false, full: false },
+        { hitId: "baz", hitStart: 1, hitEnd: 100, reverse: false, full: true }
       ]
     },
     duplicates: {
@@ -455,12 +455,12 @@ test("Remove partial matches", t => {
         { hitId: "baz", hitStart: 1, hitEnd: 70, reverse: false }
       ],
       expected: [
-        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: false },
-        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: true },
-        { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: false },
-        { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: true },
-        { hitId: "baz", hitStart: 1, hitEnd: 80, reverse: false },
-        { hitId: "baz", hitStart: 1, hitEnd: 70, reverse: false }
+        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: false, full: true },
+        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: true, full: true },
+        { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: false, full: true },
+        { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: true, full: true },
+        { hitId: "baz", hitStart: 1, hitEnd: 80, reverse: false, full: false },
+        { hitId: "baz", hitStart: 1, hitEnd: 70, reverse: false, full: false }
       ]
     }
   };

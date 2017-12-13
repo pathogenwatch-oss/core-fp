@@ -239,9 +239,14 @@ class Core {
       Math.abs(hitStart - hitEnd) + 1 === this.config.geneLengths[hitId];
     const complete = new Set();
     _.forEach(hits, hit => {
-      if (isCompleteMatch(hit)) complete.add(hit.hitId);
+      if (isCompleteMatch(hit)) {
+        complete.add(hit.hitId);
+        hit.full = true;
+      } else {
+        hit.full = false;
+      }
     });
-    _.remove(hits, hit => complete.has(hit.hitId) && !isCompleteMatch(hit));
+    _.remove(hits, hit => complete.has(hit.hitId) && !hit.full);
   }
 
   getFamiliesWithHits(hits) {
