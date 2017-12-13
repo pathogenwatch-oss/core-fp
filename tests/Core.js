@@ -1,6 +1,8 @@
-const { test } = require("ava");
-const { Core } = require("../src/Core");
 const _ = require("lodash");
+const { test } = require("ava");
+const sinon = require("sinon");
+
+const { Core } = require("../src/Core");
 
 test("Compliment", t => {
   const coreAnalyser = new Core();
@@ -476,4 +478,37 @@ test("Families With Hits", t => {
   const hits = [{ hitId: "geneA" }, { hitId: "geneA" }, { hitId: "geneC" }];
   const expected = new Set(["geneA", "geneC"]);
   t.deepEqual(coreAnalyser.getFamiliesWithHits(hits), expected);
+});
+
+test("Get Core", t => {
+  const config = {
+    geneLengths: {
+      foo: 100,
+      bar: 100,
+      baz: 100
+    },
+    minMatchCoverage: 75
+  };
+  const hits = [
+    { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: false },
+    { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: true },
+    { hitId: "bar", hitStart: 1, hitEnd: 80, reverse: false },
+    { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: false },
+    { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: true },
+    { hitId: "baz", hitStart: 1, hitEnd: 80, reverse: false },
+    { hitId: "baz", hitStart: 1, hitEnd: 70, reverse: false }
+  ];
+  const coreAnalyser = new Core(config);
+  coreAnalyser.addMutations = sinon.stub().returns([]);
+  coreAnalyser._removeOverlappingHits = sinon.spy();
+  const summaryData = {
+    assemblyId: "foo",
+    speciesId: 123
+  };
+  const actual = coreAnalyser.getCore(hits, summaryData);
+  t.is(actual.coreSummary.assemblyId, "foo");
+  t.is(actual.coreSummary.speciesId, 123);
+  t.is(actual.coreSummary.familiesMatches, 3);
+  t.is(coreAnalyser.addMutations.callCount, 5);
+  t.true(coreAnalyser._removeOverlappingHits.calledOnce);
 });
