@@ -527,12 +527,15 @@ test("Get Core", t => {
   };
   const actual = coreAnalyser.getCore(hits, summaryData);
   t.is(actual.coreSummary.assemblyId, "query");
+  t.is(actual.coreProfile.id, "query");
   t.is(actual.coreSummary.speciesId, 123);
   t.is(actual.coreSummary.familiesMatched, 3);
   t.is(actual.coreSummary.completeAlleles, 4);
   t.is(actual.coreSummary.kernelSize, 5);
+  t.is(actual.coreProfile.size, 5);
   t.is(actual.coreSummary.percentKernelMatched, 100.0);
   t.is(coreAnalyser.addMutations.callCount, 5);
   t.true(coreAnalyser._removeOverlappingHits.calledOnce);
   t.is(actual.coreSummary.percentAssemblyMatched, 48.0);
+  t.is(actual.coreProfile.nt, 480);
 });

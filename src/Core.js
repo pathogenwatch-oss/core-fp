@@ -302,6 +302,9 @@ class Core {
     return {
       coreSummary,
       coreProfile: {
+        id: assemblyId, // Duplication of coreSummary.assemblyId
+        size: kernelSize, // Duplication of coreSummary.kernelSize
+        nt: totalMatchLength, // Total length of all matches (including duplicates, overlaps deletions)
         coreProfile: _.groupBy(hits, "hitId")
       }
     };
