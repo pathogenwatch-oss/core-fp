@@ -5,6 +5,7 @@ const { promisify } = require("util");
 
 const { runBlast, BlastParser } = require("./src/Blast");
 const { Core } = require("./src/Core");
+const { queryName } = require("./src/Utils");
 
 process.on("unhandledRejection", reason => {
   logger("error:unhandledRejection")(reason);
@@ -12,6 +13,7 @@ process.on("unhandledRejection", reason => {
 });
 
 const SCHEME = Number(process.env.WGSA_ORGANISM_TAXID);
+const QUERY_PATH = process.argv[2];
 
 async function readConfig(scheme) {
   const schemeConfigPath = path.join(__dirname, "schemes", String(scheme), "config.jsn");
@@ -23,13 +25,23 @@ async function main() {
   const config = await readConfig(SCHEME);
   const { blastConfiguration } = config;
   const blastDb = path.join(__dirname, "databases", String(SCHEME), "core.db");
-  const blastOutput = await runBlast(blastDb, blastConfiguration);
+  const whenQueryLength = getBaseCount(fs.createReadStream(QUERY_PATH));
+  const blastInputStream = fs.createReadStream(QUERY_PATH);
+  const blastOutput = await runBlast(blastDb, blastConfiguration, blastInputStream);
   // await promisify(fs.writeFile)(`./${SCHEME}.xml`, blastOutput);
   // const blastOutput = await promisify(fs.readFile)(`./${SCHEME}.xml`);
   const blastParser = new BlastParser(config);
   const hits = await blastParser.parse(blastOutput);
+  const queryLength = await whenQueryLength;
   const coreAnalyser = new Core(config);
-  return coreAnalyser.getCore(hits);
+  const assemblyId = queryName(QUERY_PATH);
+  const speciesId = SCHEME
+  const summaryData = {
+    assemblyId,
+    speciesId,
+    queryLength
+  };
+  return coreAnalyser.getCore(hits, summaryData);
 }
 
 if (require.main === module) {

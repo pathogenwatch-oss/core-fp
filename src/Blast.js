@@ -7,7 +7,7 @@ const _ = require("lodash");
 
 const { defer, StreamCollector } = require("./Utils");
 
-async function runBlast(blastDb, blastConfiguration) {
+async function runBlast(blastDb, blastConfiguration, blastInputStream) {
   const blastCommand = [
     "blastn -task blastn -outfmt 5 -query -",
     "-db", blastDb,
@@ -39,7 +39,7 @@ async function runBlast(blastDb, blastConfiguration) {
   });
 
   const outputStream = new StreamCollector();
-  process.stdin.pipe(shell.stdin);
+  blastInputStream.pipe(shell.stdin);
   shell.stdout.pipe(outputStream);
   return Promise.all([whenBlastFinished, outputStream.output]).then(
     ([, output]) => output // Return the output as long as there wasn't an error running Blast

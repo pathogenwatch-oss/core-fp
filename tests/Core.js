@@ -479,20 +479,22 @@ test("Get Hit Stats", t => {
       geneA: 100,
       geneB: 100,
       geneC: 100
-    }
+    },
+    queryLength: 1000
   };
   const coreAnalyser = new Core(config);
   const hits = [
-    { hitId: "geneA", full: true },
-    { hitId: "geneA", full: true },
-    { hitId: "geneC", full: false },
-    { hitId: "geneC", full: false }
+    { hitId: "geneA", queryStart: 1, queryEnd: 100, full: true },
+    { hitId: "geneA", queryStart: 1, queryEnd: 100, full: true },
+    { hitId: "geneC", queryStart: 1, queryEnd: 80, full: false },
+    { hitId: "geneC", queryStart: 1, queryEnd: 70, full: false }
   ];
   const expected = {
     familiesMatched: 2,
     completeAlleles: 2,
     kernelSize: 4,
-    percentKernelMatched: 66.7
+    percentKernelMatched: 66.7,
+    totalMatchLength: 350
   };
   t.deepEqual(coreAnalyser.getHitStats(hits), expected);
 });
@@ -507,20 +509,21 @@ test("Get Core", t => {
     minMatchCoverage: 75
   };
   const hits = [
-    { hitId: "geneA", hitStart: 1, hitEnd: 100, reverse: false },
-    { hitId: "geneA", hitStart: 1, hitEnd: 100, reverse: true },
-    { hitId: "geneB", hitStart: 1, hitEnd: 80, reverse: false },
-    { hitId: "geneB", hitStart: 1, hitEnd: 100, reverse: false },
-    { hitId: "geneB", hitStart: 1, hitEnd: 100, reverse: true },
-    { hitId: "geneC", hitStart: 1, hitEnd: 80, reverse: false },
-    { hitId: "geneC", hitStart: 1, hitEnd: 70, reverse: false }
+    { hitId: "geneA", queryStart: 1001, queryEnd: 1100, hitStart: 1, hitEnd: 100, reverse: false },
+    { hitId: "geneA", queryStart: 2001, queryEnd: 2100, hitStart: 1, hitEnd: 100, reverse: true },
+    { hitId: "geneB", queryStart: 3001, queryEnd: 3080, hitStart: 1, hitEnd: 80, reverse: false }, // Dropped
+    { hitId: "geneB", queryStart: 4001, queryEnd: 4100, hitStart: 1, hitEnd: 100, reverse: false },
+    { hitId: "geneB", queryStart: 5001, queryEnd: 5100, hitStart: 1, hitEnd: 100, reverse: true },
+    { hitId: "geneC", queryStart: 6001, queryEnd: 6080, hitStart: 1, hitEnd: 80, reverse: false },
+    { hitId: "geneC", queryStart: 7001, queryEnd: 7070, hitStart: 1, hitEnd: 70, reverse: false } // Dropped
   ];
   const coreAnalyser = new Core(config);
   coreAnalyser.addMutations = sinon.stub().returns([]);
   coreAnalyser._removeOverlappingHits = sinon.spy();
   const summaryData = {
     assemblyId: "query",
-    speciesId: 123
+    speciesId: 123,
+    queryLength: 1000
   };
   const actual = coreAnalyser.getCore(hits, summaryData);
   t.is(actual.coreSummary.assemblyId, "query");
@@ -531,4 +534,5 @@ test("Get Core", t => {
   t.is(actual.coreSummary.percentKernelMatched, 100.0);
   t.is(coreAnalyser.addMutations.callCount, 5);
   t.true(coreAnalyser._removeOverlappingHits.calledOnce);
+  t.is(actual.coreSummary.percentAssemblyMatched, 48.0);
 });

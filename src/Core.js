@@ -253,10 +253,12 @@ class Core {
     const { geneLengths } = this.config;
     const numberOfGenes = _.keys(geneLengths).length;
     let completeAlleles = 0;
+    let totalMatchLength = 0;
     const familiesMatchedSet = new Set();
-    _.forEach(hits, ({ hitId, full }) => {
+    _.forEach(hits, ({ hitId, full, queryStart, queryEnd }) => {
       familiesMatchedSet.add(hitId);
       if (full) completeAlleles += 1;
+      totalMatchLength += Math.abs(queryEnd - queryStart + 1);
     });
     const [familiesMatched, kernelSize] = [
       familiesMatchedSet.size,
@@ -268,24 +270,34 @@ class Core {
       familiesMatched,
       completeAlleles,
       kernelSize,
-      percentKernelMatched
+      percentKernelMatched,
+      totalMatchLength
     };
   }
 
   getCore(hits, summaryData) {
-    const { assemblyId, speciesId } = summaryData;
+    const { assemblyId, speciesId, queryLength } = summaryData;
     this._removePartialHits(hits);
     this._removeShortHits(hits);
     this._removeOverlappingHits(hits);
     _.forEach(hits, hit => this.addMutations(hit));
-    const { familiesMatched, completeAlleles, kernelSize, percentKernelMatched } = this.getHitStats(hits);
+    const {
+      familiesMatched,
+      completeAlleles,
+      kernelSize,
+      percentKernelMatched,
+      totalMatchLength
+    } = this.getHitStats(hits);
+    const percentAssemblyMatched =
+      Math.round(1000 * (totalMatchLength / queryLength)) / 10;
     const coreSummary = {
       assemblyId,
       speciesId,
       familiesMatched, // Genes with one or more hit
       completeAlleles, // Genes with one of more hit against the full reference
       kernelSize, // Number of hits in coreProfile
-      percentKernelMatched // familiesMatched / number of genes families for scheme
+      percentKernelMatched, // familiesMatched / number of genes families for scheme
+      percentAssemblyMatched // Total length of all matches (including duplicates, overlaps deletions) divided by the total number of bases in the query sequence
     };
     return {
       coreSummary,

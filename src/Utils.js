@@ -1,4 +1,6 @@
 const { Writable } = require("stream");
+const fasta = require("bionode-fasta");
+const path = require("path");
 
 function defer() {
   // Returns a promise which you can manually resolve or reject
@@ -34,4 +36,20 @@ class StreamCollector extends Writable {
   }
 }
 
-module.exports = { defer, StreamCollector };
+function getBaseCount(stream) {
+  const output = defer();
+  const sequences = fasta.obj();
+  let totalLength = 0;
+  sequences.on("data", ({ seq }) => (totalLength += seq.length));
+  sequences.on("end", () => output.resolve(totalLength));
+  sequences.on("error", err => output.reject(err));
+  stream.pipe(sequences);
+  return output;
+}
+
+function queryName(filePath) {
+  const fileName = path.basename(filePath);
+  return fileName.replace(/(\.fasta|\.fa|\.mfa|\.tfa)$/, "");
+}
+
+module.exports = { defer, StreamCollector, getBaseCount, queryName };
