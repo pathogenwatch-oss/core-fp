@@ -250,15 +250,25 @@ class Core {
   }
 
   getHitStats(hits) {
+    const { geneLengths } = this.config;
+    const numberOfGenes = _.keys(geneLengths).length;
+    let completeAlleles = 0;
     const familiesMatchedSet = new Set();
-    const completeAllelesSet = new Set();
     _.forEach(hits, ({ hitId, full }) => {
       familiesMatchedSet.add(hitId);
-      if (full) completeAllelesSet.add(hitId);
+      if (full) completeAlleles += 1;
     });
+    const [familiesMatched, kernelSize] = [
+      familiesMatchedSet.size,
+      hits.length
+    ];
+    const percentKernelMatched =
+      Math.round(1000 * (familiesMatched / numberOfGenes)) / 10;
     return {
-      familiesMatched: familiesMatchedSet.size,
-      completeAlleles: completeAllelesSet.size
+      familiesMatched,
+      completeAlleles,
+      kernelSize,
+      percentKernelMatched
     };
   }
 
@@ -268,12 +278,14 @@ class Core {
     this._removeShortHits(hits);
     this._removeOverlappingHits(hits);
     _.forEach(hits, hit => this.addMutations(hit));
-    const { familiesMatched, completeAlleles } = this.getHitStats(hits);
+    const { familiesMatched, completeAlleles, kernelSize, percentKernelMatched } = this.getHitStats(hits);
     const coreSummary = {
       assemblyId,
       speciesId,
       familiesMatched, // Genes with one or more hit
-      completeAlleles // Genes with one of more hit against the full reference
+      completeAlleles, // Genes with one of more hit against the full reference
+      kernelSize, // Number of hits in coreProfile
+      percentKernelMatched // familiesMatched / number of genes families for scheme
     };
     return {
       coreSummary,

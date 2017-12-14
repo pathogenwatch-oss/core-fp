@@ -474,15 +474,25 @@ test("Remove partial matches", t => {
 });
 
 test("Get Hit Stats", t => {
-  const coreAnalyser = new Core();
+  const config = {
+    geneLengths: {
+      geneA: 100,
+      geneB: 100,
+      geneC: 100
+    }
+  };
+  const coreAnalyser = new Core(config);
   const hits = [
     { hitId: "geneA", full: true },
-    { hitId: "geneA", full: false },
+    { hitId: "geneA", full: true },
+    { hitId: "geneC", full: false },
     { hitId: "geneC", full: false }
   ];
   const expected = {
     familiesMatched: 2,
-    completeAlleles: 1
+    completeAlleles: 2,
+    kernelSize: 4,
+    percentKernelMatched: 66.7
   };
   t.deepEqual(coreAnalyser.getHitStats(hits), expected);
 });
@@ -490,33 +500,35 @@ test("Get Hit Stats", t => {
 test("Get Core", t => {
   const config = {
     geneLengths: {
-      foo: 100,
-      bar: 100,
-      baz: 100
+      geneA: 100,
+      geneB: 100,
+      geneC: 100
     },
     minMatchCoverage: 75
   };
   const hits = [
-    { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: false },
-    { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: true },
-    { hitId: "bar", hitStart: 1, hitEnd: 80, reverse: false },
-    { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: false },
-    { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: true },
-    { hitId: "baz", hitStart: 1, hitEnd: 80, reverse: false },
-    { hitId: "baz", hitStart: 1, hitEnd: 70, reverse: false }
+    { hitId: "geneA", hitStart: 1, hitEnd: 100, reverse: false },
+    { hitId: "geneA", hitStart: 1, hitEnd: 100, reverse: true },
+    { hitId: "geneB", hitStart: 1, hitEnd: 80, reverse: false },
+    { hitId: "geneB", hitStart: 1, hitEnd: 100, reverse: false },
+    { hitId: "geneB", hitStart: 1, hitEnd: 100, reverse: true },
+    { hitId: "geneC", hitStart: 1, hitEnd: 80, reverse: false },
+    { hitId: "geneC", hitStart: 1, hitEnd: 70, reverse: false }
   ];
   const coreAnalyser = new Core(config);
   coreAnalyser.addMutations = sinon.stub().returns([]);
   coreAnalyser._removeOverlappingHits = sinon.spy();
   const summaryData = {
-    assemblyId: "foo",
+    assemblyId: "query",
     speciesId: 123
   };
   const actual = coreAnalyser.getCore(hits, summaryData);
-  t.is(actual.coreSummary.assemblyId, "foo");
+  t.is(actual.coreSummary.assemblyId, "query");
   t.is(actual.coreSummary.speciesId, 123);
   t.is(actual.coreSummary.familiesMatched, 3);
-  t.is(actual.coreSummary.completeAlleles, 2);
+  t.is(actual.coreSummary.completeAlleles, 4);
+  t.is(actual.coreSummary.kernelSize, 5);
+  t.is(actual.coreSummary.percentKernelMatched, 100.0);
   t.is(coreAnalyser.addMutations.callCount, 5);
   t.true(coreAnalyser._removeOverlappingHits.calledOnce);
 });
