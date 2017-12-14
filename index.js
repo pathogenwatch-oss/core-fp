@@ -5,7 +5,7 @@ const { promisify } = require("util");
 
 const { runBlast, BlastParser } = require("./src/Blast");
 const { Core } = require("./src/Core");
-const { queryName } = require("./src/Utils");
+const { queryName, getBaseCount } = require("./src/Utils");
 
 process.on("unhandledRejection", reason => {
   logger("error:unhandledRejection")(reason);
@@ -22,6 +22,7 @@ async function readConfig(scheme) {
 }
 
 async function main() {
+  logger("debug")(`Analysing ${QUERY_PATH} with ${SCHEME}`);
   const config = await readConfig(SCHEME);
   const { blastConfiguration } = config;
   const blastDb = path.join(__dirname, "databases", String(SCHEME), "core.db");

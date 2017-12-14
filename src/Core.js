@@ -1,4 +1,5 @@
 const _ = require("lodash");
+const hasha = require("hasha");
 
 class Core {
   constructor(config) {
@@ -26,6 +27,21 @@ class Core {
       .map(c => baseMap[c] || c)
       .reverse()
       .join("");
+  }
+
+
+  _hashSequence(sequence) {
+    const upper = sequence.toUpperCase();
+    const normalised = upper.replace(/\s|\.|-/g, ""); // Remove whitespace, periods, and dashes
+    return hasha(normalised, { algorithm: "sha1" });
+  }
+
+  addQueryHash(hit) {
+    const { reverse } = hit;
+    const querySequence = reverse
+      ? this._compliment(hit.querySequence)
+      : hit.querySequence;
+    hit.queryHash = this._hashSequence(querySequence);
   }
 
   // Examples of mutations you'd get given different alignments
@@ -275,12 +291,52 @@ class Core {
     };
   }
 
+  _formatHit(hit) {
+    const { hitStart, hitEnd, queryStart, queryEnd } = hit;
+    const rR = hitStart <= hitEnd ? [hitStart, hitEnd] : [hitEnd, hitStart];
+    const qR =
+      queryStart <= queryEnd ? [queryStart, queryEnd] : [queryEnd, queryStart];
+    return {
+      id: hit.queryHash,
+      muts: hit.mutations,
+      full: hit.full,
+      qId: hit.queryId,
+      qR,
+      rR,
+      pid: hit.pIdent,
+      evalue: hit.eValue,
+      r: hit.reverse
+    };
+  }
+
+  _formatAlleles(gene, hits) {
+    // Formats the hits against a given gene family
+    const { geneLengths } = this.config;
+    return {
+      alleles: _.map(hits, this._formatHit),
+      refLength: geneLengths[gene]
+    };
+  }
+
+  formatCoreProfile(hits) {
+    const byGene = _.groupBy(hits, "hitId");
+    const output = {};
+    _.forEach(byGene, (alleles, gene) => {
+      if (alleles.length >= 1)
+        output[gene] = this._formatAlleles(gene, alleles);
+    });
+    return output;
+  }
+
   getCore(hits, summaryData) {
     const { assemblyId, speciesId, queryLength } = summaryData;
     this._removePartialHits(hits);
     this._removeShortHits(hits);
     this._removeOverlappingHits(hits);
-    _.forEach(hits, hit => this.addMutations(hit));
+    _.forEach(hits, hit => {
+      this.addQueryHash(hit);
+      this.addMutations(hit);
+    });
     const {
       familiesMatched,
       completeAlleles,
@@ -299,13 +355,14 @@ class Core {
       percentKernelMatched, // familiesMatched / number of genes families for scheme
       percentAssemblyMatched // Total length of all matches (including duplicates, overlaps deletions) divided by the total number of bases in the query sequence
     };
+    const coreProfile = this.formatCoreProfile(hits);
     return {
       coreSummary,
       coreProfile: {
         id: assemblyId, // Duplication of coreSummary.assemblyId
         size: kernelSize, // Duplication of coreSummary.kernelSize
         nt: totalMatchLength, // Total length of all matches (including duplicates, overlaps deletions)
-        coreProfile: _.groupBy(hits, "hitId")
+        coreProfile
       }
     };
   }

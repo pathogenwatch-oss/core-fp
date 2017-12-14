@@ -211,6 +211,65 @@ test("Add Mutations", t => {
         }
       ],
       reverse: true
+    },
+    longerExample: {
+      hitStart: 1,
+      hitEnd: 25,
+      hitSequence: "TTTTTTTTTTTTTTTTTTTTT-TTT--T",
+      querySequence: "TTTATTTAATTT--TTT--ACTTTTTTT",
+      queryStart: 1,
+      queryEnd: 24,
+      mutations: [
+        {
+          t: "S",
+          wt: "T",
+          mut: "A",
+          rI: 4,
+          qI: 4
+        },
+        {
+          t: "S",
+          wt: "TT",
+          mut: "AA",
+          rI: 8,
+          qI: 8
+        },
+        {
+          t: "D",
+          wt: "TT",
+          mut: "--",
+          rI: 13,
+          qI: 12
+        },
+        {
+          t: "D",
+          wt: "TT",
+          mut: "--",
+          rI: 18,
+          qI: 15
+        },
+        {
+          t: "S",
+          wt: "TT",
+          mut: "AC",
+          rI: 20,
+          qI: 16
+        },
+        {
+          t: "I",
+          wt: "-",
+          mut: "T",
+          rI: 21,
+          qI: 18
+        },
+        {
+          t: "I",
+          wt: "--",
+          mut: "TT",
+          rI: 24,
+          qI: 22
+        }
+      ]
     }
   };
   _.forEach(testCases, (testCase, testName) => {
@@ -519,6 +578,7 @@ test("Get Core", t => {
   ];
   const coreAnalyser = new Core(config);
   coreAnalyser.addMutations = sinon.stub().returns([]);
+  coreAnalyser.addQueryHash = sinon.stub().returns([]);
   coreAnalyser._removeOverlappingHits = sinon.spy();
   const summaryData = {
     assemblyId: "query",
@@ -535,7 +595,258 @@ test("Get Core", t => {
   t.is(actual.coreProfile.size, 5);
   t.is(actual.coreSummary.percentKernelMatched, 100.0);
   t.is(coreAnalyser.addMutations.callCount, 5);
+  t.is(coreAnalyser.addQueryHash.callCount, 5);
   t.true(coreAnalyser._removeOverlappingHits.calledOnce);
   t.is(actual.coreSummary.percentAssemblyMatched, 48.0);
   t.is(actual.coreProfile.nt, 480);
+});
+
+test("Hash sequence", t => {
+  const coreAnalyser = new Core({});
+  const testCases = [
+    ["acgt", "2108994e17f6cca9ff2352ada92b6511db076034"],
+    ["ACGT", "2108994e17f6cca9ff2352ada92b6511db076034"],
+    ["a\tC\n-G t.", "2108994e17f6cca9ff2352ada92b6511db076034"]
+  ];
+  _.forEach(testCases, ([sequence, expected]) => {
+    const actual = coreAnalyser._hashSequence(sequence);
+    t.is(actual, expected, sequence);
+  });
+});
+
+test("Add query hash", t => {
+  const coreAnalyser = new Core({});
+  const testCases = [
+    {
+      querySequence: "AACGT",
+      reverse: false,
+      queryHash: "2497ee7de61c48a79fbf5e21c5ca2822e40906c9"
+    },
+    {
+      querySequence: "aacgt",
+      reverse: false,
+      queryHash: "2497ee7de61c48a79fbf5e21c5ca2822e40906c9"
+    },
+    {
+      querySequence: "a-A\nC.g\nt ",
+      reverse: false,
+      queryHash: "2497ee7de61c48a79fbf5e21c5ca2822e40906c9"
+    },
+    {
+      querySequence: "AACGT",
+      reverse: true,
+      queryHash: "cd65ee62b2e080b8e7e648ebde704a1658570335"
+    },
+    {
+      querySequence: "aacgt",
+      reverse: true,
+      queryHash: "cd65ee62b2e080b8e7e648ebde704a1658570335"
+    },
+    {
+      querySequence: "a-A\nC.g\nt ",
+      reverse: true,
+      queryHash: "cd65ee62b2e080b8e7e648ebde704a1658570335"
+    }
+  ];
+  _.forEach(testCases, hit => {
+    const { queryHash: expected, reverse, querySequence } = hit;
+    delete hit.queryHash;
+    coreAnalyser.addQueryHash(hit);
+    t.is(hit.queryHash, expected, JSON.stringify({ reverse, querySequence }));
+  });
+});
+
+test("Format Core Profile", t => {
+  const config = {
+    geneLengths: {
+      geneA: 10,
+      geneB: 10,
+      geneC: 10,
+      geneD: 10
+    }
+  };
+  const hits = [
+    {
+      hitId: "geneA",
+      queryHash: "abcd1234",
+      mutations: [
+        {
+          t: "S",
+          wt: "T",
+          mut: "A",
+          rI: 4,
+          qI: 4
+        }
+      ],
+      full: true,
+      queryId: "contigA",
+      queryStart: 1,
+      queryEnd: 10,
+      hitStart: 1,
+      hitEnd: 10,
+      pIdent: 90.0,
+      eValue: 0,
+      reverse: false
+    },
+    {
+      hitId: "geneB",
+      queryHash: "ijkl1234",
+      mutations: [
+        {
+          t: "D",
+          wt: "T",
+          mut: "-",
+          rI: 6,
+          qI: 6
+        },
+        {
+          t: "I",
+          wt: "-",
+          mut: "T",
+          rI: 8,
+          qI: 8
+        }
+      ],
+      full: false,
+      queryId: "contigB",
+      queryStart: 1,
+      queryEnd: 10,
+      hitStart: 1,
+      hitEnd: 9,
+      pIdent: 80.0,
+      eValue: 0,
+      reverse: true
+    },
+    {
+      hitId: "geneC",
+      queryHash: "mnop1234",
+      mutations: [],
+      full: true,
+      queryId: "contigA",
+      queryStart: 1,
+      queryEnd: 10,
+      hitStart: 1,
+      hitEnd: 10,
+      pIdent: 100.0,
+      eValue: 0,
+      reverse: false
+    },
+    {
+      hitId: "geneA",
+      queryHash: "efgh234",
+      mutations: [
+        {
+          t: "S",
+          wt: "T",
+          mut: "A",
+          rI: 6,
+          qI: 104
+        }
+      ],
+      full: true,
+      queryId: "contigB",
+      queryStart: 101,
+      queryEnd: 110,
+      hitStart: 1,
+      hitEnd: 10,
+      pIdent: 90.0,
+      eValue: 0,
+      reverse: true
+    }
+  ];
+  const expected = {
+    "geneA": {
+      "alleles": [
+        {
+          "id": "abcd1234",
+          "muts": [
+            {
+              t: "S",
+              wt: "T",
+              mut: "A",
+              rI: 4,
+              qI: 4
+            }
+          ],
+          "full": true,
+          "qId": "contigA",
+          "qR": [ 1, 10 ],
+          "rR": [ 1, 10 ],
+          "pid": 90.0,
+          "evalue": 0,
+          "r": false
+        },
+        {
+          "id": "efgh234",
+          "muts": [
+            {
+              t: "S",
+              wt: "T",
+              mut: "A",
+              rI: 6,
+              qI: 104
+            }
+          ],
+          "full": true,
+          "qId": "contigB",
+          "qR": [ 101, 110 ],
+          "rR": [ 1, 10 ],
+          "pid": 90.0,
+          "evalue": 0,
+          "r": true
+        }
+      ],
+      "refLength": 10
+    },
+    "geneB": {
+      "alleles": [
+        {
+          "id": "ijkl1234",
+          "muts": [
+            {
+              t: "D",
+              wt: "T",
+              mut: "-",
+              rI: 6,
+              qI: 6
+            },
+            {
+              t: "I",
+              wt: "-",
+              mut: "T",
+              rI: 8,
+              qI: 8
+            }
+          ],
+          "full": false,
+          "qId": "contigB",
+          "qR": [ 1, 10 ],
+          "rR": [ 1, 9 ],
+          "pid": 80.0,
+          "evalue": 0,
+          "r": true
+        }
+      ],
+      "refLength": 10
+    },
+    "geneC": {
+      "alleles": [
+        {
+          "id": "mnop1234",
+          "muts": [],
+          "full": true,
+          "qId": "contigA",
+          "qR": [ 1, 10 ],
+          "rR": [ 1, 10 ],
+          "pid": 100.0,
+          "evalue": 0,
+          "r": false
+        }
+      ],
+      "refLength": 10
+    }
+  };
+  const coreAnalyser = new Core(config);
+  const actual = coreAnalyser.formatCoreProfile(hits);
+  t.deepEqual(actual, expected);
 });
