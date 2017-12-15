@@ -7,12 +7,6 @@ class Core {
     this.config = config;
   }
 
-  _pIdent(hit) {
-    // Percentage identity of the hit
-    const { matchingBases, alignmentLength } = hit;
-    return 100 * (matchingBases / alignmentLength);
-  }
-
   _compliment(sequence) {
     const baseMap = {
       "A": "T",

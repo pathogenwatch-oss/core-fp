@@ -379,17 +379,6 @@ test("Add Mutations", t => {
   });
 });
 
-test("Percentage identity", t => {
-  const coreAnalyser = new Core();
-  t.is(
-    coreAnalyser._pIdent({
-      matchingBases: 10,
-      alignmentLength: 100
-    }),
-    10
-  );
-});
-
 test("Remove Overlapping hits", t => {
   const coreAnalyser = new Core();
   const testCases = {
