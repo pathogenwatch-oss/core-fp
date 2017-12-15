@@ -8,15 +8,17 @@ const _ = require("lodash");
 const { defer, StreamCollector } = require("./Utils");
 
 async function runBlast(blastDb, blastConfiguration, blastInputStream) {
+  logger("debug")(`Running blast with ${blastDb}`);
   const blastCommand = [
     "blastn -task blastn -outfmt 5 -query -",
     "-db", blastDb,
     "-perc_identity", blastConfiguration.gatheringPid,
     "-evalue", blastConfiguration.gatheringEValue,
     "-num_alignments", blastConfiguration.maxMatches
-  ]
+  ];
   blastCommand.push(...(blastConfiguration.otherOptions || []));
   const whenBlastFinished = defer();
+  logger("trace")(`Blast command is '${blastCommand.join(" ")}'`);
   const shell = spawn(blastCommand.join(" "), { shell: true });
 
   // If `blastn` doesn't exist, there's a race between the input stream and the
@@ -331,6 +333,7 @@ class BlastParser {
   }
 
   async parse(xmlString) {
+    logger("debug")("Parsing the blast output xml");
     const xml = await promisify(parseXml)(xmlString);
     const iterations = _.get(
       xml,

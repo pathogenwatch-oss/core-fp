@@ -329,6 +329,7 @@ class Core {
   }
 
   getCore(hits, summaryData) {
+    logger("debug")("Calculating the core profile");
     const { assemblyId, speciesId, queryLength } = summaryData;
     this._removePartialHits(hits);
     this._removeShortHits(hits);

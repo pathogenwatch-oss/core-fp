@@ -1,6 +1,7 @@
 const { Writable } = require("stream");
 const fasta = require("bionode-fasta");
 const path = require("path");
+const logger = require("debug");
 
 function defer() {
   // Returns a promise which you can manually resolve or reject
@@ -37,6 +38,7 @@ class StreamCollector extends Writable {
 }
 
 function getBaseCount(stream) {
+  logger("debug")("Counting the number of nucleotides in the query sequence");
   const output = defer();
   const sequences = fasta.obj();
   let totalLength = 0;
