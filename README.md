@@ -1,7 +1,7 @@
 ## Create a core profile
 
 ```
-docker run -i --rm -v -e WGSA_ORGANISM_TAXID=<TAXID> <FULL_PATH_TO_SEQENCE>:/data registry.gitlab.com/cgps/cgps-core-fp:<VERSION> /data/<SEQUENCE_NAME>
+docker run -i --rm -e WGSA_ORGANISM_TAXID=<TAXID> -v <FULL_PATH_TO_SEQENCE>:/data registry.gitlab.com/cgps/cgps-core-fp:<VERSION> /data/<SEQUENCE_NAME>
 ```
 
 For example:
