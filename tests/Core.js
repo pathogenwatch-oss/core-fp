@@ -311,6 +311,24 @@ test("Add Mutations", t => {
       ],
       reverse: true
     },
+    multiReverseSubstitution: {
+      hitStart: 1,
+      hitEnd: 10,
+      hitSequence: "TTTTTTTTTT",
+      querySequence: "TTTCCCGGCT",
+      queryStart: 101,
+      queryEnd: 110,
+      mutations: [
+        {
+          t: "S",
+          wt: "AAAAAA",
+          mut: "GCCGGG",
+          rI: 2,
+          qI: 109
+        }
+      ],
+      reverse: true
+    },
     longerExample: {
       hitStart: 1,
       hitEnd: 25,
