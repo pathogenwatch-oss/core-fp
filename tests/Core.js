@@ -37,6 +37,69 @@ test("Compare Alignment", t => {
   });
 });
 
+test("More Compare Alignment", t => {
+  const coreAnalyser = new Core();
+  const testCases = {
+    bigInsertion: {
+      hitSequence: "TT------TT",
+      querySequence: "TTTTTTTTTT",
+      expected: [
+        {
+          t: "I",
+          wt: "------",
+          mut: "TTTTTT",
+          refOffset: 1,
+          queryOffset: 2
+        }
+      ]
+    },
+    bigDeletion: {
+      hitSequence: "TTTTTTTTTT",
+      querySequence: "TT------TT",
+      expected: [
+        {
+          t: "D",
+          wt: "TTTTTT",
+          mut: "------",
+          refOffset: 2,
+          queryOffset: 1
+        }
+      ]
+    },
+    bitMulti: {
+      hitSequence: "TTTTT-----TTTTTTTTTTTTTTT",
+      querySequence: "TTTTTTTTTT-----AAAAATTTTT",
+      expected: [
+        {
+          t: "I",
+          wt: "-----",
+          mut: "TTTTT",
+          refOffset: 4,
+          queryOffset: 5
+        },
+        {
+          t: "D",
+          wt: "TTTTT",
+          mut: "-----",
+          refOffset: 5,
+          queryOffset: 9
+        },
+        {
+          t: "S",
+          wt: "TTTTT",
+          mut: "AAAAA",
+          refOffset: 10,
+          queryOffset: 10
+        }
+      ]
+    }
+  };
+  _.forEach(testCases, ({ hitSequence, querySequence, expected }, testName) => {
+    const actual = coreAnalyser._compareAlignment(hitSequence, querySequence);
+    t.deepEqual(actual, expected, testName);
+  });
+});
+
 test("Add Mutations", t => {
   const coreAnalyser = new Core();
   const testCases = {
@@ -112,6 +175,24 @@ test("Add Mutations", t => {
       ],
       reverse: true
     },
+    bigInsertion: {
+      hitStart: 1,
+      hitEnd: 4,
+      hitSequence: "TT------TT",
+      querySequence: "TTTTTTTTTT",
+      queryStart: 101,
+      queryEnd: 110,
+      mutations: [
+        {
+          t: "I",
+          wt: "------",
+          mut: "TTTTTT",
+          rI: 2,
+          qI: 103
+        }
+      ],
+      reverse: false
+    },
     forwardDeletion: {
       hitStart: 1,
       hitEnd: 5,
@@ -147,6 +228,24 @@ test("Add Mutations", t => {
         }
       ],
       reverse: true
+    },
+    bigDeletion: {
+      hitStart: 1,
+      hitEnd: 10,
+      hitSequence: "TTTTTTTTTT",
+      querySequence: "TT------TT",
+      queryStart: 101,
+      queryEnd: 104,
+      mutations: [
+        {
+          t: "D",
+          wt: "TTTTTT",
+          mut: "------",
+          rI: 3,
+          qI: 102
+        }
+      ],
+      reverse: false
     },
     multiSubstitution: {
       hitStart: 1,

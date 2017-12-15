@@ -1,5 +1,6 @@
 const _ = require("lodash");
 const hasha = require("hasha");
+const logger = require("debug");
 
 class Core {
   constructor(config) {
@@ -104,7 +105,9 @@ class Core {
         wt: refBase, // Wild Type aka reference sequence
         mut: queryBase, // Mutation aka query sequence
         refOffset,
-        queryOffset
+        queryOffset,
+        refEnd: refBase == "-" ? refOffset : refOffset + 1,
+        queryEnd: queryBase == "-" ? queryOffset : queryOffset + 1
       }
     }
 
@@ -135,25 +138,24 @@ class Core {
     });
 
     const mergeMutations = (a, b) => {
-      const refEnd = a.wt.length + a.refOffset - 1;
-      const queryEnd = a.mut.length + a.queryOffset - 1;
+      const { refEnd, queryEnd } = a;
       if (
         _.isEqual(
-          [a.t, b.t, refEnd + 1, queryEnd + 1],
+          [a.t, b.t, refEnd, queryEnd],
           ["S", "S", b.refOffset, b.queryOffset]
         )
       ) {
         // Substition
       } else if (
         _.isEqual(
-          [a.t, b.t, refEnd + 1, queryEnd],
+          [a.t, b.t, refEnd, queryEnd],
           ["D", "D", b.refOffset, b.queryOffset]
         )
       ) {
         // Deletion
       } else if (
         _.isEqual(
-          [a.t, b.t, refEnd, queryEnd + 1],
+          [a.t, b.t, refEnd, queryEnd],
           ["I", "I", b.refOffset, b.queryOffset]
         )
       ) {
@@ -163,6 +165,8 @@ class Core {
       }
       a.wt = a.wt + b.wt;
       a.mut = a.mut + b.mut;
+      a.refEnd = b.refEnd;
+      a.queryEnd = b.queryEnd;
       return true;
     };
 
@@ -176,11 +180,17 @@ class Core {
       }
       const merged = mergeMutations(currentMutation, nextMutation);
       if (!merged) {
+        delete currentMutation.refEnd;
+        delete currentMutation.queryEnd;
         mutations.push(currentMutation);
         currentMutation = nextMutation;
       }
     });
-    if (currentMutation.t !== null) mutations.push(currentMutation);
+    if (currentMutation.t !== null) {
+      delete currentMutation.refEnd;
+      delete currentMutation.queryEnd;
+      mutations.push(currentMutation);
+    };
     return mutations;
   }
 
