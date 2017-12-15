@@ -19,7 +19,7 @@ for d in $(find ./schemes -mindepth 1 -maxdepth 1 -type d); do
       echo "Skipping core for $ref";
     else
       echo "Building core for $ref";
-      cat $ref | DEBUG='*' WGSA_ORGANISM_TAXID=$scheme node index.js > databases/${scheme}/references/${ref_name}.core.json
+      DEBUG='*' WGSA_ORGANISM_TAXID=$scheme node index.js $ref > databases/${scheme}/references/${ref_name}.core.json
     fi
   done
 done

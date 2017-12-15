@@ -36,7 +36,7 @@ async function main() {
   const queryLength = await whenQueryLength;
   const coreAnalyser = new Core(config);
   const assemblyId = queryName(QUERY_PATH);
-  const speciesId = SCHEME
+  const speciesId = SCHEME;
   const summaryData = {
     assemblyId,
     speciesId,
