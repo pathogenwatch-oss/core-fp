@@ -566,14 +566,28 @@ test("Remove Overlapping hits", t => {
 test("Remove short hits", t => {
   const testCases = [
     {
-      config: { minMatchCoverage: 30 },
+      config: {
+        minMatchCoverage: 90,
+        geneLengths: {
+          geneA: 100,
+          geneB: 200
+        }
+      },
       hits: [
-        { hitStart: 1, hitEnd: 100, reverse: false },
-        { hitStart: 1, hitEnd: 20, reverse: false },
-        { hitStart: 1, hitEnd: 100, reverse: true },
-        { hitStart: 80, hitEnd: 100, reverse: true }
+        { hitId: "geneA", hitStart: 1, hitEnd: 20, reverse: false }, // <- Drop
+        { hitId: "geneB", hitStart: 1, hitEnd: 95, reverse: false }, // <- Drop
+        { hitId: "geneA", hitStart: 1, hitEnd: 95, reverse: false },
+        { hitId: "geneA", hitStart: 1, hitEnd: 90, reverse: false },
+        { hitId: "geneB", hitStart: 1, hitEnd: 190, reverse: true },
+        { hitId: "geneA", hitStart: 80, hitEnd: 100, reverse: true }, // <- Drop
+        { hitId: "geneA", hitStart: 80, hitEnd: 175, reverse: true }
       ],
-      expected: [{ hitStart: 1, hitEnd: 100, reverse: false }, { hitStart: 1, hitEnd: 100, reverse: true }]
+      expected: [
+        { hitId: "geneA", hitStart: 1, hitEnd: 95, reverse: false },
+        { hitId: "geneA", hitStart: 1, hitEnd: 90, reverse: false },
+        { hitId: "geneB", hitStart: 1, hitEnd: 190, reverse: true },
+        { hitId: "geneA", hitStart: 80, hitEnd: 175, reverse: true }
+      ]
     }
   ];
   _.forEach(testCases, ({ config, hits, expected }) => {

@@ -83,7 +83,7 @@ class Core {
     hit.mutations = mutations;
     _.forEach(mutations, m => {
       const { refOffset, queryOffset } = m;
-      m.rI = reverse ? hitStart + refOffset : hitStart + refOffset;
+      m.rI = hitStart + refOffset;
       m.qI = reverse ? queryEnd - queryOffset : queryStart + queryOffset;
       delete m.refOffset;
       delete m.queryOffset;
@@ -246,10 +246,16 @@ class Core {
   }
 
   _removeShortHits(hits) {
-    const minMatchCoverage = this.config.minMatchCoverage || 80;
+    const minMatchCoveragePercent = (this.config.minMatchCoverage || 80) / 100;
+    const { geneLengths } = this.config;
+    const minMatchCoverage = _.mapValues(
+      geneLengths,
+      length => length * minMatchCoveragePercent
+    );
     _.remove(
       hits,
-      ({ hitStart, hitEnd }) => Math.abs(hitStart - hitEnd) < minMatchCoverage
+      ({ hitId, hitStart, hitEnd }) =>
+        Math.abs(hitStart - hitEnd) + 1 < (minMatchCoverage[hitId] || 0)
     );
   }
 
