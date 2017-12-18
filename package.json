@@ -19,6 +19,7 @@
   "license": "MIT",
   "dependencies": {
     "bionode-fasta": "^0.5.6",
+    "bluebird": "^3.5.1",
     "debug": "^3.1.0",
     "hasha": "^3.0.0",
     "xml2js": "^0.4.19"
