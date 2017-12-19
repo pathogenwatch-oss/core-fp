@@ -319,51 +319,113 @@ test("Get Profile", t => {
   t.deepEqual(fp.getProfile(), expected);
 });
 
-// test("Compare", t => {
-//   const referenceProfile = {
-//     geneA: [
-//       {
-//         rI: 9,
-//         muts: {
-//           A: ["refB"]
-//         }
-//       },
-//       {
-//         rI: 11,
-//         muts: {
-//           TTTT: ["refA", "refB"],
-//           TT: ["refC"]
-//         }
-//       }
-//     ],
-//     geneB: [
-//       {
-//         rI: 8,
-//         muts: {
-//           A: ["refB"]
-//         }
-//       }
-//     ]
-//   };
-//   const fp = new Fp({
-//     geneA: {
+test("Score", t => {
+  const referenceProfile = {
+    geneA: [
+      {
+        rI: 9,
+        muts: {
+          A: ["refB"]
+        }
+      },
+      {
+        rI: 11,
+        muts: {
+          TTTT: ["refA", "refB"],
+          TT: ["refC"]
+        }
+      },
+      {
+        rI: 100,
+        muts: {
+          A: ["refA"]
+        }
+      }
+    ],
+    geneB: [
+      {
+        rI: 8,
+        muts: {
+          A: ["refB"]
+        }
+      }
+    ]
+  };
+  const fp = new Fp({
+    geneA: {
+      9: {
+        A: new Set(["query"])
+      },
+      11: {
+        TTTT: new Set(["query"])
+      },
+      20: {
+        T: new Set(["query"])
+      }
+    },
+    geneB: {
+      8: {
+        T: new Set(["query"])
+      }
+    },
+    geneC: {
+      10: {
+        T: new Set(["query"])
+      }
+    }
+  });
+  const bounds = {
+    geneA: [1, 25],
+    geneB: [1, 25],
+    geneC: [1, 25]
+  };
+  const scores = fp._score(referenceProfile, bounds);
+  const expectedScores = [
+    {
+      score: 0.25,
+      referenceId: "refA",
+      matchedSites: 1,
+      countedSites: 4
+    },
+    {
+      score: 0.5,
+      referenceId: "refB",
+      matchedSites: 2,
+      countedSites: 4
+    },
+    {
+      score: 0,
+      referenceId: "refC",
+      matchedSites: 0,
+      countedSites: 4
+    }
+  ];
+  t.deepEqual(_.sortBy(scores, "referenceId"), expectedScores);
+});
 
-//     }
-//   })
-//   const fp = new Fp({
-//     geneA: {
-//       9: {
-//         A: new Set(["bar"])
-//       },
-//       11: {
-//         TTTT: new Set(["foo", "bar"]),
-//         TT: new Set(["baz"])
-//       }
-//     },
-//     geneB: {
-//       8: {
-//         A: new Set(["bar"])
-//       }
-//     }
-//   });
-// })
+test("Find best score", t => {
+  const fp = new Fp();
+  const scores = [
+    {
+      score: 0.25,
+      referenceId: "refA"
+    },
+    {
+      score: 0.5,
+      referenceId: "refC"
+    },
+    {
+      score: 0.5,
+      referenceId: "refB"
+    },
+    {
+      score: 0.1,
+      referenceId: "refD"
+    }
+  ];
+  const expected = {
+    score: 0.5,
+    referenceId: "refB"
+  };
+  t.deepEqual(fp._bestScore(scores), expected);
+});
