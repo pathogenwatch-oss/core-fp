@@ -1,5 +1,6 @@
 const _ = require("lodash");
 const { test } = require("ava");
+const sinon = require("sinon");
 
 const { Fp } = require("../src/Fp");
 
@@ -428,4 +429,57 @@ test("Find best score", t => {
     referenceId: "refB"
   };
   t.deepEqual(fp._bestScore(scores), expected);
+});
+
+test("Calculate FP", t => {
+  const core = {};
+  const referenceProfile = {};
+  const summaryData = {
+    assemblyId: "foo",
+    speciesId: 1234
+  };
+
+  const fakeBounds = { geneA: [1, 100] };
+  const fakeScores = [
+    {
+      score: 0.25,
+      referenceId: "refA",
+      matchedSites: 25,
+      countedSites: 100
+    },
+    {
+      score: 0.5,
+      referenceId: "refC",
+      matchedSites: 50,
+      countedSites: 100
+    },
+    {
+      score: 0.5,
+      referenceId: "refB",
+      matchedSites: 50,
+      countedSites: 100
+    },
+    {
+      score: 0.1,
+      referenceId: "refD",
+      matchedSites: 10,
+      countedSites: 100
+    }
+  ];
+  const addCore = sinon.stub(Fp.prototype, "addCore").returns(fakeBounds);
+  const _score = sinon.stub(Fp.prototype, "_score").returns(fakeScores);
+  const fingerprintSize = sinon.stub(Fp.prototype, "fingerprintSize").returns(80);
+
+  const actual = Fp.calculateFp(core, referenceProfile, summaryData);
+  const expected = {
+    assemblyId: "foo",
+    speciesId: 1234,
+    subTypeAssignment: "refB",
+    scores: fakeScores,
+    fingerprintSize: 80
+  };
+  t.deepEqual(actual, expected);
+  t.true(addCore.withArgs("foo", core).calledOnce);
+  t.true(_score.withArgs(referenceProfile, fakeBounds).calledOnce);
+  t.true(fingerprintSize.calledOnce);
 });

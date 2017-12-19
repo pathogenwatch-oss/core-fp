@@ -94,8 +94,26 @@ class Fp {
     return scores.sort((a, b) => {
       if (a.score !== b.score) return b.score - a.score;
       else if (a.referenceId <= b.referenceId) return -1;
-      else if (a.referenceId > b.referenceId) return 1;
+      return 1;
     })[0];
+  }
+
+  static calculateFp(coreProfile, referenceProfile, summaryData) {
+    // Given a query sequence, fingerprint it against pre-profiled
+    // references.  Format it for output.
+    const { assemblyId, speciesId } = summaryData;
+    logger("debug")(`Calculating the FP for ${assemblyId}`);
+    const fp = new this({});
+    const bounds = fp.addCore(assemblyId, coreProfile);
+    const scores = fp._score(referenceProfile, bounds);
+    const { referenceId: subTypeAssignment } = fp._bestScore(scores);
+    return {
+      assemblyId, // Name of the query sequence
+      speciesId, // Species of the query
+      subTypeAssignment, // Reference with the lowest score
+      scores, // The scores for each reference
+      fingerprintSize: fp.fingerprintSize() // Total number of unique positions of substitutions across all of the references
+    };
   }
 }
 

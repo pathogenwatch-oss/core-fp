@@ -17,7 +17,7 @@ class Core {
       "c": "g",
       "g": "c",
       "t": "a"
-    }
+    };
     return _(sequence.split(""))
       .map(c => baseMap[c] || c)
       .reverse()
