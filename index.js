@@ -16,11 +16,12 @@ process.on("unhandledRejection", reason => {
 });
 
 const SCHEME = Number(process.env.WGSA_ORGANISM_TAXID);
+const SCHEME_PROFILE_PATH = path.join(__dirname, "databases", String(SCHEME), "fp.json");
 const argv = {
   command: process.argv[2]
 };
 if (argv.command === "query") {
-  argv.query = process.argv[3];
+  argv.queryPath = process.argv[3];
 } else if (argv.command === "build") {
   argv.references = process.argv.slice(3);
 } else {
@@ -34,13 +35,22 @@ async function readConfig(scheme) {
   return JSON.parse(contents);
 }
 
-async function buildCore(query) {
-  logger("debug")(`Analysing ${query} with ${SCHEME}`);
+async function readFpProfile(fpProfilePath) {
+  const contents = await promisify(fs.readFile)(fpProfilePath);
+  return JSON.parse(contents);
+}
+
+async function query(queryPath, fpProfilePath=null) {
+  logger("debug")(`Analysing ${queryPath} with ${SCHEME}`);
+  const whenReferenceProfile =
+    fpProfilePath === null
+      ? Promise.resolve(null)
+      : readFpProfile(fpProfilePath);
   const config = await readConfig(SCHEME);
   const { blastConfiguration } = config;
   const blastDb = path.join(__dirname, "databases", String(SCHEME), "core.db");
-  const whenQueryLength = getBaseCount(fs.createReadStream(query));
-  const blastInputStream = fs.createReadStream(query);
+  const whenQueryLength = getBaseCount(fs.createReadStream(queryPath));
+  const blastInputStream = fs.createReadStream(queryPath);
   const blastOutput = await runBlast(blastDb, blastConfiguration, blastInputStream);
   // await promisify(fs.writeFile)(`./${SCHEME}.xml`, blastOutput);
   // const blastOutput = await promisify(fs.readFile)(`./${SCHEME}.xml`);
@@ -48,26 +58,35 @@ async function buildCore(query) {
   const hits = await blastParser.parse(blastOutput);
   const queryLength = await whenQueryLength;
   const coreAnalyser = new Core(config);
-  const assemblyId = queryName(query);
+  const assemblyId = queryName(queryPath);
   const speciesId = SCHEME;
   const summaryData = {
     assemblyId,
     speciesId,
     queryLength
   };
-  return coreAnalyser.getCore(hits, summaryData);
+  const core = coreAnalyser.getCore(hits, summaryData);
+  const { coreProfile } = core.coreProfile;
+  const referenceProfile = await whenReferenceProfile;
+  if (referenceProfile !== null) {
+    const fp = Fp.calculateFp(coreProfile, referenceProfile, summaryData);
+    core.fp = fp;
+  }
+  return core;
 }
 
-async function buildFpProfile(references) {
-  logger("debug")(`Building FP for ${SCHEME} from ${references.length} references`);
+async function build(references) {
+  logger("debug")(
+    `Building FP for ${SCHEME} from ${references.length} references`
+  );
   const fp = new Fp();
   const whenCoresAdded = Promise.map(
     references,
     async reference => {
-      const core = await buildCore(reference);
+      const core = await query(reference);
       const { assemblyId } = core.coreSummary;
       const { coreProfile } = core.coreProfile;
-      fp.addReference(assemblyId, coreProfile);
+      fp.addCore(assemblyId, coreProfile);
     },
     { concurrency: 3 }
   );
@@ -77,15 +96,19 @@ async function buildFpProfile(references) {
 
 if (require.main === module) {
   if (argv.command === "query") {
-    const { query } = argv;
-    buildCore(query)
+    const { queryPath } = argv;
+    query(queryPath, SCHEME_PROFILE_PATH)
       .then(JSON.stringify)
       .then(console.log)
       .catch(logger("error"));
   } else if (argv.command === "build") {
     const { references } = argv;
-    buildFpProfile(references)
+    build(references)
       .then(JSON.stringify)
+      .then(async data => {
+        await promisify(fs.writeFile)(SCHEME_PROFILE_PATH, data);
+        return `Wrote FP profile for ${SCHEME} to ${SCHEME_PROFILE_PATH}`;
+      })
       .then(console.log)
       .catch(logger("error"));
   }
