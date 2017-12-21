@@ -40,9 +40,9 @@ async function readFpProfile(fpProfilePath) {
   return JSON.parse(contents);
 }
 
-async function query(queryPath, fpProfilePath=null) {
+async function query(queryPath, fpProfilePath = null) {
   logger("debug")(`Analysing ${queryPath} with ${SCHEME}`);
-  const whenReferenceProfile =
+  const whenReferenceDetails =
     fpProfilePath === null
       ? Promise.resolve(null)
       : readFpProfile(fpProfilePath);
@@ -67,9 +67,9 @@ async function query(queryPath, fpProfilePath=null) {
   };
   const core = coreAnalyser.getCore(hits, summaryData);
   const { coreProfile } = core.coreProfile;
-  const referenceProfile = await whenReferenceProfile;
-  if (referenceProfile !== null) {
-    const fp = Fp.calculateFp(coreProfile, referenceProfile, summaryData);
+  const referenceDetails = await whenReferenceDetails;
+  if (referenceDetails !== null) {
+    const fp = Fp.calculateFp(coreProfile, referenceDetails, summaryData);
     core.fp = fp;
   }
   return core;
@@ -87,11 +87,16 @@ async function build(references) {
       const { assemblyId } = core.coreSummary;
       const { coreProfile } = core.coreProfile;
       fp.addCore(assemblyId, coreProfile);
+      return assemblyId;
     },
     { concurrency: 3 }
   );
-  await whenCoresAdded;
-  return fp.getProfile();
+  const referenceNames = await whenCoresAdded;
+  return {
+    referenceNames,
+    referenceProfile: fp.getProfile(),
+    fingerprintSize: fp.fingerprintSize()
+  };
 }
 
 if (require.main === module) {

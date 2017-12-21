@@ -18,6 +18,6 @@ for d in $(find ./schemes -mindepth 1 -maxdepth 1 -type d); do
   else
     echo "Building FP for $scheme"
     mkdir -p databases/$scheme
-    DEBUG='*' WGSA_ORGANISM_TAXID=$scheme node index.js build ${scheme_dir}/fastas/*.fasta > $scheme_fp
+    DEBUG='*' WGSA_ORGANISM_TAXID=$scheme node index.js build ${scheme_dir}/fastas/*.fasta
   fi
 done

@@ -38,6 +38,71 @@ test("Add simple reference", t => {
   t.is(fp.fingerprintSize(), 1);
 });
 
+test("Fingerprint Size", t => {
+  const fp = new Fp();
+  fp.substitutions = {
+    geneA: {
+      10: {
+        A: new Set(["refA"])
+      }
+    }
+  };
+  t.is(fp.fingerprintSize(), 1);
+
+  fp.substitutions = {
+    geneA: {
+      10: {
+        A: new Set(["refA"]),
+        AA: new Set(["refA"])
+      }
+    }
+  };
+  t.is(fp.fingerprintSize(), 2);
+
+  fp.substitutions = {
+    geneA: {
+      10: {
+        A: new Set(["refA"])
+      },
+      20: {
+        A: new Set(["refA"])
+      }
+    }
+  };
+  t.is(fp.fingerprintSize(), 2);
+
+  fp.substitutions = {
+    geneA: {
+      10: {
+        A: new Set(["refA", "refB"]),
+        AA: new Set(["refA"])
+      },
+      20: {
+        A: new Set(["refA"])
+      }
+    }
+  };
+  t.is(fp.fingerprintSize(), 3);
+
+  fp.substitutions = {
+    geneA: {
+      10: {
+        A: new Set(["refA"]),
+        AA: new Set(["refA"])
+      },
+      20: {
+        A: new Set(["refA"])
+      }
+    },
+    geneB: {
+      10: {
+        A: new Set(["refA"])
+      }
+    }
+  };
+  t.is(fp.fingerprintSize(), 4);
+});
+
 test("Add best reference", t => {
   const fp = new Fp();
   const core = {
@@ -193,8 +258,7 @@ test("Update profile", t => {
       }
     }
   });
-
-  t.is(fp.fingerprintSize(), 3);
+  t.is(fp.fingerprintSize(), 4);
 });
 
 test("Get Profile", t => {
@@ -321,6 +385,7 @@ test("Get Profile", t => {
 });
 
 test("Score", t => {
+  const allReferences = ["refA", "refB", "refC", "refD"];
   const referenceProfile = {
     geneA: [
       {
@@ -333,7 +398,14 @@ test("Score", t => {
         rI: 11,
         muts: {
           TTTT: ["refA", "refB"],
-          TT: ["refC"]
+          TT: ["refD"]
+        }
+      },
+      {
+        rI: 15,
+        muts: {
+          A: ["refA"],
+          T: ["refD"]
         }
       },
       {
@@ -380,31 +452,37 @@ test("Score", t => {
     geneB: [1, 25],
     geneC: [1, 25]
   };
-  const scores = fp._score(referenceProfile, bounds);
+  const scores = fp._score(allReferences, referenceProfile, bounds);
   const expectedScores = [
     {
-      score: 0.25,
+      score: 1 / 6,
       referenceId: "refA",
       matchedSites: 1,
-      countedSites: 4
+      countedSites: 6
     },
     {
       score: 0.5,
       referenceId: "refB",
-      matchedSites: 2,
-      countedSites: 4
+      matchedSites: 3,
+      countedSites: 6
+    },
+    {
+      score: 1 / 6,
+      referenceId: "refC",
+      matchedSites: 1,
+      countedSites: 6
     },
     {
       score: 0,
-      referenceId: "refC",
+      referenceId: "refD",
       matchedSites: 0,
-      countedSites: 4
+      countedSites: 6
     }
   ];
   t.deepEqual(_.sortBy(scores, "referenceId"), expectedScores);
 });
 
-test("Find best score", t => {
+test("Sort scores", t => {
   const fp = new Fp();
   const scores = [
     {
@@ -424,16 +502,29 @@ test("Find best score", t => {
       referenceId: "refD"
     }
   ];
-  const expected = {
-    score: 0.5,
-    referenceId: "refB"
-  };
-  t.deepEqual(fp._bestScore(scores), expected);
+  const expected = [
+    {
+      score: 0.5,
+      referenceId: "refB"
+    },
+    {
+      score: 0.5,
+      referenceId: "refC"
+    },
+    {
+      score: 0.25,
+      referenceId: "refA"
+    },
+    {
+      score: 0.1,
+      referenceId: "refD"
+    }
+  ];
+  t.deepEqual(fp._sortScores(scores), expected);
 });
 
 test("Calculate FP", t => {
   const core = {};
-  const referenceProfile = {};
   const summaryData = {
     assemblyId: "foo",
     speciesId: 1234
@@ -466,11 +557,17 @@ test("Calculate FP", t => {
       countedSites: 100
     }
   ];
+  const referenceNames = _.map(fakeScores, "referenceId");
+  const referenceProfile = {};
+  const referenceDetails = {
+    referenceProfile,
+    referenceNames,
+    fingerprintSize: 80
+  };
   const addCore = sinon.stub(Fp.prototype, "addCore").returns(fakeBounds);
   const _score = sinon.stub(Fp.prototype, "_score").returns(fakeScores);
-  const fingerprintSize = sinon.stub(Fp.prototype, "fingerprintSize").returns(80);
 
-  const actual = Fp.calculateFp(core, referenceProfile, summaryData);
+  const actual = Fp.calculateFp(core, referenceDetails, summaryData);
   const expected = {
     assemblyId: "foo",
     speciesId: 1234,
@@ -480,6 +577,5 @@ test("Calculate FP", t => {
   };
   t.deepEqual(actual, expected);
   t.true(addCore.withArgs("foo", core).calledOnce);
-  t.true(_score.withArgs(referenceProfile, fakeBounds).calledOnce);
-  t.true(fingerprintSize.calledOnce);
+  t.true(_score.withArgs(referenceNames, referenceProfile, fakeBounds).calledOnce);
 });
