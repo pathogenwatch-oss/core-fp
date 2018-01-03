@@ -1,11 +1,8 @@
 const _ = require("lodash");
 const logger = require("debug");
+const cdf = require("distributions-poisson-cdf");
 
 class Filter {
-  compare(queryCore, referenceCore) {
-    return {};
-  }
-
   _compareMutations(first, second) {
     const firstPositions = _(first)
       .filter(({ t }) => t === "S")
@@ -91,6 +88,48 @@ class Filter {
     );
     const mutationRate = totalDifferences / basesCompared;
     return { mutationRate, alleleDifferences };
+  }
+
+  _filter(queryCoreProfile, referenceCoreProfile, threshold) {
+    logger("debug")("Filtering alleles with too many/few substitutions");
+    const { mutationRate, alleleDifferences } = this._compare(
+      queryCoreProfile,
+      referenceCoreProfile
+    );
+    const filteredAlleles = [];
+    _.forEach(alleleDifferences, (alleles, gene) => {
+      _.forEach(alleles, ({ length, variance }, alleleId) => {
+        const expectedVariations = Math.max(1, length * mutationRate);
+        const varianceLikelihood = cdf(variance, {
+          lambda: expectedVariations
+        });
+        if (
+          varianceLikelihood < threshold ||
+          varianceLikelihood > (1 - threshold)
+        )
+          filteredAlleles.push({ familyId: gene, alleleId, variance });
+      });
+    });
+    return { filteredAlleles, mutationRate };
+  }
+
+  // eslint-disable-next-line max-params
+  calculateFilter(referenceId, summaryData, numberGeneFamilies, coreProfiles) {
+    const { referenceCoreProfile, queryCoreProfile } = coreProfiles;
+    const { assemblyId, speciesId } = summaryData;
+    const filterThreshold = 1 / (numberGeneFamilies * 1e6);
+    const { filteredAlleles, mutationRate } = this._filter(
+      queryCoreProfile,
+      referenceCoreProfile,
+      filterThreshold
+    );
+    return {
+      assemblyId,
+      referenceId,
+      speciesId,
+      filteredAlleles,
+      mutationRate
+    };
   }
 }
 

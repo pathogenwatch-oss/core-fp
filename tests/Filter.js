@@ -274,7 +274,7 @@ test("Compare query to reference", t => {
   };
 
   const filter = new Filter();
-  const { mutationRate, alleleDifferences } = filter.compare(queryCoreProfile, referenceCoreProfile);
+  const { mutationRate, alleleDifferences } = filter._compare(queryCoreProfile, referenceCoreProfile);
   t.is(mutationRate, 5 / 500);
   t.deepEqual(alleleDifferences, {
     commonGene: {
@@ -309,4 +309,82 @@ test("Compare query to reference", t => {
       }
     }
   });
+});
+
+test.only("Calculate filtered alleles", t => {
+  const queryCoreProfile = {
+    commonGene: { alleles: [{ id: "commonGeneQuery" }] },
+    commonWithDuplicates: {
+      alleles: [
+        { id: "commonWithDuplicatesQuery1" },
+        { id: "commonWithDuplicatesQuery2" },
+        { id: "commonWithDuplicatesQuery3" }
+      ]
+    },
+    onlyInQuery: { alleles: [{ id: "onlyInQuery" }] }
+  };
+  const referenceCoreProfile = {
+    onlyInReference: { alleles: [{ id: "onlyInReference" }] },
+    commonGene: { alleles: [{ id: "commonGeneReference" }] },
+    commonWithDuplicates: {
+      alleles: [
+        { id: "commonWithDuplicatesReference1" },
+        { id: "commonWithDuplicatesReference2" }
+      ]
+    }
+  };
+
+  const filter = new Filter();
+  const fakeAlleleDifferences = {
+    commonGene: {
+      commonGeneQuery: {
+        length: 70,
+        variance: 3,
+        bestRefAllele: "commonGeneReference"
+      }
+    },
+    commonWithDuplicates: {
+      commonWithDuplicatesQuery1: {
+        length: 1000,
+        variance: 1,
+        bestRefAllele: "commonWithDuplicatesReference1"
+      },
+      commonWithDuplicatesQuery2: {
+        length: 1000,
+        variance: 5,
+        bestRefAllele: "commonWithDuplicatesReference2"
+      },
+      commonWithDuplicatesQuery3: {
+        length: 800,
+        variance: 15,
+        bestRefAllele: "commonWithDuplicatesReference2"
+      }
+    }
+  };
+  const fakeMutationRate = 0.01;
+  filter._compare = sinon.stub().returns({
+    mutationRate: fakeMutationRate,
+    alleleDifferences: fakeAlleleDifferences
+  });
+
+  const actual = filter._filter(queryCoreProfile, referenceCoreProfile, 0.01);
+  const { filteredAlleles, mutationRate } = actual;
+  const expected = [
+    {
+      familyId: "commonWithDuplicates",
+      alleleId: "commonWithDuplicatesQuery1",
+      variance: 1
+    },
+    {
+      familyId: "commonWithDuplicates",
+      alleleId: "commonWithDuplicatesQuery3",
+      variance: 15
+    }
+  ];
+
+  t.deepEqual(filteredAlleles, expected);
+  t.true(
+    filter._compare.withArgs(queryCoreProfile, referenceCoreProfile).calledOnce
+  );
+  t.is(mutationRate, 0.01);
 });
