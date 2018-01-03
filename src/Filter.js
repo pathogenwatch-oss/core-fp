@@ -4,6 +4,9 @@ const cdf = require("distributions-poisson-cdf");
 
 class Filter {
   _compareMutations(first, second) {
+    logger("trace")(
+      "Measuring the number of different substitutions between alleles"
+    );
     const firstPositions = _(first)
       .filter(({ t }) => t === "S")
       .keyBy("rI")
@@ -27,6 +30,7 @@ class Filter {
   }
 
   _compareAlleles(query, reference) {
+    logger("trace")("Comparing alleles of gene between query and reference");
     const differences = [];
     _.forEach(query, queryAllele => {
       _.forEach(reference, referenceAllele => {
@@ -67,7 +71,8 @@ class Filter {
     return { allelesCompared, differences: totalDifferences, bestMatches };
   }
 
-  compare(queryCoreProfile, referenceCoreProfile) {
+  _compare(queryCoreProfile, referenceCoreProfile) {
+    logger("debug")("Comparing genes from query with reference");
     let totalDifferences = 0;
     let basesCompared = 0;
     const alleleDifferences = {};
