@@ -171,12 +171,3 @@ if (require.main === module) {
 }
 
 module.exports = { BlastParser };
-
-// Add a r (aka reverse) field to each hit and reorder hitStart to be smaller than hitEnd
-// [DONE] Only consider a partial match of a gene family if there are no alignments against the complete reference
-// Total length of core gene family in output "Reference length"
-// [DONE] Percent identity based on matching bases and the alignment length
-// [DONE] If complete hits against different gene families overlap by more than 40 bases then take the one with best pident
-// [DONE] Check for overlaps of any partial match by 40 bases and keep the one with the best pident
-// [DONE] Only keep "big" partial matches bigger than "minMatchCoverage" percentage
-// [DONE] Use the additional blast options
