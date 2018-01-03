@@ -31,15 +31,17 @@ class Filter {
 
   _compareAlleles(query, reference) {
     const differences = [];
-    _.forEach(query, (queryAllele, queryIndex) => {
-      _.forEach(reference, (referenceAllele, referenceIndex) => {
-        const { muts: queryMutations } = queryAllele;
-        const { muts: referenceMutations } = referenceAllele;
+    _.forEach(query, queryAllele => {
+      _.forEach(reference, referenceAllele => {
+        const { id: queryId, muts: queryMutations } = queryAllele;
+        const { qR: [qStart, qEnd] } = queryAllele;
+        const queryLength = Math.abs(qStart - qEnd) + 1;
+        const { id: referenceId, muts: referenceMutations } = referenceAllele;
         const difference = this._compareMutations(
           queryMutations,
           referenceMutations
         );
-        differences.push([queryIndex, referenceIndex, difference]);
+        differences.push([queryId, referenceId, difference, queryLength]);
       });
     });
     const sortedDistances = _.sortBy(differences, [2]);
@@ -47,15 +49,48 @@ class Filter {
     const pairedReferences = new Set();
     let totalDifferences = 0;
     let allelesCompared = 0;
-    _.forEach(sortedDistances, ([queryIndex, referenceIndex, difference]) => {
-      if (pairedQueries.has(queryIndex) || pairedReferences.has(referenceIndex))
-        return;
-      pairedQueries.add(queryIndex);
-      pairedReferences.add(referenceIndex);
-      totalDifferences += difference;
-      allelesCompared += 1;
-    });
-    return { allelesCompared, differences: totalDifferences };
+    const bestMatches = {};
+    _.forEach(
+      sortedDistances,
+      ([queryId, referenceId, difference, queryLength]) => {
+        if (!_.has(bestMatches, queryId))
+          bestMatches[queryId] = {
+            length: queryLength,
+            variance: difference,
+            bestRefAllele: referenceId
+          };
+        if (pairedQueries.has(queryId) || pairedReferences.has(referenceId))
+          return;
+        pairedQueries.add(queryId);
+        pairedReferences.add(referenceId);
+        totalDifferences += difference;
+        allelesCompared += 1;
+      }
+    );
+    return { allelesCompared, differences: totalDifferences, bestMatches };
+  }
+
+  compare(queryCoreProfile, referenceCoreProfile) {
+    let totalDifferences = 0;
+    let basesCompared = 0;
+    const alleleDifferences = {};
+    _.forEach(
+      referenceCoreProfile,
+      ({ alleles: refAlleles, refLength }, gene) => {
+        const queryAlleles = _.get(queryCoreProfile, [gene, "alleles"], null);
+        if (queryAlleles === null) return;
+        const {
+          allelesCompared,
+          differences,
+          bestMatches
+        } = this._compareAlleles(queryAlleles, refAlleles);
+        basesCompared += allelesCompared * refLength;
+        totalDifferences += differences;
+        alleleDifferences[gene] = bestMatches;
+      }
+    );
+    const mutationRate = totalDifferences / basesCompared;
+    return { mutationRate, alleleDifferences };
   }
 }
 
