@@ -2,9 +2,14 @@ const path = require("path");
 const fs = require("fs");
 const logger = require("debug");
 const { promisify } = require("util");
+const _ = require("lodash");
+const Promise = require("bluebird");
+const mkdirp = require("mkdirp-promise");
 
 const { runBlast, BlastParser } = require("./src/Blast");
 const { Core } = require("./src/Core");
+const { Fp } = require("./src/Fp");
+const { Filter } = require("./src/Filter");
 const { queryName, getBaseCount } = require("./src/Utils");
 
 process.on("unhandledRejection", reason => {
@@ -13,7 +18,19 @@ process.on("unhandledRejection", reason => {
 });
 
 const SCHEME = Number(process.env.WGSA_ORGANISM_TAXID);
-const QUERY_PATH = process.argv[2];
+const SCHEME_PROFILE_PATH = path.join(__dirname, "databases", String(SCHEME), "fp.json");
+
+const argv = {
+  command: process.argv[2]
+};
+if (argv.command === "query") {
+  argv.queryPath = process.argv[3];
+} else if (argv.command === "build") {
+  argv.references = process.argv.slice(3);
+} else {
+  logger("error")(`Usage ${process.argv[0]} ${process.argv[1]} query|build`);
+  process.exit(1);
+}
 
 async function readConfig(scheme) {
   const schemeConfigPath = path.join(__dirname, "schemes", String(scheme), "config.jsn");
@@ -21,44 +38,136 @@ async function readConfig(scheme) {
   return JSON.parse(contents);
 }
 
-async function main() {
-  logger("debug")(`Analysing ${QUERY_PATH} with ${SCHEME}`);
+async function readFpProfile() {
+  const contents = await promisify(fs.readFile)(SCHEME_PROFILE_PATH);
+  return JSON.parse(contents);
+}
+
+function referenceCorePath(scheme, name) {
+  return path.join(
+    __dirname,
+    "databases",
+    String(scheme),
+    "references",
+    `${name}.json`
+  );
+}
+
+async function writeReferenceCore(scheme, name, core) {
+  const filePath = referenceCorePath(scheme, name);
+  const dirPath = path.dirname(filePath);
+  await mkdirp(dirPath, { mode: 0o755 });
+  await promisify(fs.writeFile)(filePath, JSON.stringify(core));
+  logger("debug")(`Wrote core for ${name} to ${filePath}`);
+  return filePath;
+}
+
+async function readReferenceCore(scheme, name) {
+  const filePath = referenceCorePath(scheme, name);
+  const contents = await promisify(fs.readFile)(filePath);
+  return JSON.parse(contents);
+}
+
+const [SKIP_FP, RUN_FP] = [true, false];
+async function query(queryPath, skipFp) {
+  logger("debug")(`Analysing ${queryPath} with ${SCHEME}`);
+  const whenReferenceDetails = skipFp ? Promise.resolve(null) : readFpProfile();
   const config = await readConfig(SCHEME);
   const { blastConfiguration } = config;
   const blastDb = path.join(__dirname, "databases", String(SCHEME), "core.db");
-  const whenQueryLength = getBaseCount(fs.createReadStream(QUERY_PATH));
-  const blastInputStream = fs.createReadStream(QUERY_PATH);
-  const blastOutput = await runBlast(blastDb, blastConfiguration, blastInputStream);
+  const whenQueryLength = getBaseCount(fs.createReadStream(queryPath));
+  const blastInputStream = fs.createReadStream(queryPath);
+  const blastOutput = await runBlast(
+    blastDb,
+    blastConfiguration,
+    blastInputStream
+  );
   // await promisify(fs.writeFile)(`./${SCHEME}.xml`, blastOutput);
   // const blastOutput = await promisify(fs.readFile)(`./${SCHEME}.xml`);
   const blastParser = new BlastParser(config);
   const hits = await blastParser.parse(blastOutput);
   const queryLength = await whenQueryLength;
   const coreAnalyser = new Core(config);
-  const assemblyId = queryName(QUERY_PATH);
+  const assemblyId = queryName(queryPath);
   const speciesId = SCHEME;
   const summaryData = {
     assemblyId,
     speciesId,
     queryLength
   };
-  return coreAnalyser.getCore(hits, summaryData);
+  const core = coreAnalyser.getCore(hits, summaryData);
+  const referenceDetails = await whenReferenceDetails;
+  if (!skipFp) {
+    logger("debug")("Adding FP to Core");
+    const { coreProfile: queryCoreProfile } = core.coreProfile;
+    const fp = Fp.calculateFp(queryCoreProfile, referenceDetails, summaryData);
+    core.fp = fp;
+
+    logger("debug")("Adding Filter to Core");
+    const { subTypeAssignment: referenceId } = fp;
+    const filter = new Filter();
+    const { referenceProfile } = referenceDetails;
+    const genes = _.keys(referenceProfile);
+    const numberGeneFamilies = genes.length;
+    const referenceCore = await readReferenceCore(SCHEME, referenceId);
+    const { coreProfile: referenceCoreProfile } = referenceCore.coreProfile;
+    const bothCoreProfiles = {
+      queryCoreProfile,
+      referenceCoreProfile
+    };
+    core.filter = filter.calculateFilter(
+      referenceId,
+      summaryData,
+      numberGeneFamilies,
+      bothCoreProfiles
+    );
+  }
+  return core;
+}
+
+async function build(references) {
+  logger("debug")(
+    `Building FP for ${SCHEME} from ${references.length} references`
+  );
+  const fp = new Fp();
+  const whenCoresAdded = Promise.map(
+    references,
+    async reference => {
+      const core = await query(reference, SKIP_FP);
+      const { assemblyId } = core.coreSummary;
+      const { coreProfile } = core.coreProfile;
+      await writeReferenceCore(SCHEME, assemblyId, core);
+      fp.addCore(assemblyId, coreProfile);
+      return assemblyId;
+    },
+    { concurrency: 3 }
+  );
+  const referenceNames = await whenCoresAdded;
+  return {
+    referenceNames,
+    referenceProfile: fp.getProfile(),
+    fingerprintSize: fp.fingerprintSize()
+  };
 }
 
 if (require.main === module) {
-  main()
-    .then(JSON.stringify)
-    .then(console.log)
-    .catch(logger("error"));
+  if (argv.command === "query") {
+    const { queryPath } = argv;
+    query(queryPath, RUN_FP)
+      .then(JSON.stringify)
+      .then(console.log)
+      .catch(logger("error"));
+  } else if (argv.command === "build") {
+    const { references } = argv;
+    build(references)
+      .then(JSON.stringify)
+      .then(async data => {
+        await promisify(fs.writeFile)(SCHEME_PROFILE_PATH, data);
+        return `Wrote FP profile for ${SCHEME} to ${SCHEME_PROFILE_PATH}`;
+      })
+      .then(console.log)
+      .catch(logger("error"));
+  }
 }
 
 module.exports = { BlastParser };
-
-// Add a r (aka reverse) field to each hit and reorder hitStart to be smaller than hitEnd
-// [DONE] Only consider a partial match of a gene family if there are no alignments against the complete reference
-// Total length of core gene family in output "Reference length"
-// [DONE] Percent identity based on matching bases and the alignment length
-// [DONE] If complete hits against different gene families overlap by more than 40 bases then take the one with best pident
-// [DONE] Check for overlaps of any partial match by 40 bases and keep the one with the best pident
-// [DONE] Only keep "big" partial matches bigger than "minMatchCoverage" percentage
-// [DONE] Use the additional blast options

@@ -721,6 +721,43 @@ test("Get Core", t => {
   t.is(actual.coreProfile.nt, 480);
 });
 
+test("Hit filtering order", t => {
+  const sandbox = sinon.sandbox.create();
+
+  const fakeHits = [{ fake: "hit" }];
+  const fakeSummaryData = {};
+
+  const _removePartialHitsStub = sandbox.stub(
+    Core.prototype,
+    "_removePartialHits"
+  );
+  const _removeShortHitsStub = sandbox.stub(Core.prototype, "_removeShortHits");
+  const _removeOverlappingHitsStub = sandbox.stub(
+    Core.prototype,
+    "_removeOverlappingHits"
+  );
+  sandbox.stub(Core.prototype, "addQueryHash");
+  sandbox.stub(Core.prototype, "addMutations");
+  sandbox.stub(Core.prototype, "getHitStats").returns({
+    familiesMatched: 100,
+    completeAlleles: 100,
+    kernelSize: 100,
+    percentKernelMatched: 100,
+    totalMatchLength: 100
+  });
+  const formatCoreProfileStub = sandbox
+    .stub(Core.prototype, "formatCoreProfile")
+    .returns({});
+
+  const coreAnalyser = new Core({});
+  coreAnalyser.getCore(fakeHits, fakeSummaryData);
+  // The order of these could impact the results
+  t.true(_removePartialHitsStub.calledBefore(_removeShortHitsStub));
+  t.true(_removeShortHitsStub.calledBefore(_removeOverlappingHitsStub));
+  t.true(_removeOverlappingHitsStub.calledBefore(formatCoreProfileStub));
+  sandbox.restore();
+});
+
 test("Hash sequence", t => {
   const coreAnalyser = new Core({});
   const testCases = [

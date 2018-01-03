@@ -12,15 +12,12 @@ for d in $(find ./schemes -mindepth 1 -maxdepth 1 -type d); do
     mkdir -p databases/$scheme
     awk -F ',' '{printf ">%s\n%s\n", $2, $4}' ${scheme_dir}/core.csv | tee databases/${scheme}/core.fa | makeblastdb -title core -in - -dbtype nucl -out databases/${scheme}/core.db  
   fi
-  # This isn't used yet and slows down builds
-  # mkdir -p databases/${scheme}/references;
-  # for ref in $(ls $scheme_dir/fastas/*.fasta); do
-  #   ref_name=$(basename $ref '.fasta');
-  #   if [[ -f databases/${scheme}/references/${ref_name}.core.json ]]; then
-  #     echo "Skipping core for $ref";
-  #   else
-  #     echo "Building core for $ref";
-  #     DEBUG='*' WGSA_ORGANISM_TAXID=$scheme node index.js $ref > databases/${scheme}/references/${ref_name}.core.json
-  #   fi
-  # done
+  scheme_fp="databases/${scheme}/fp.json"
+  if [[ -f $scheme_fp ]]; then
+    echo "Skipping FP for $scheme";
+  else
+    echo "Building FP for $scheme"
+    mkdir -p databases/$scheme
+    DEBUG='*' WGSA_ORGANISM_TAXID=$scheme node index.js build ${scheme_dir}/fastas/*.fasta
+  fi
 done
