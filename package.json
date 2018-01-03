@@ -21,7 +21,9 @@
     "bionode-fasta": "^0.5.6",
     "bluebird": "^3.5.1",
     "debug": "^3.1.0",
+    "distributions-poisson-cdf": "0.0.2",
     "hasha": "^3.0.0",
+    "mkdirp-promise": "^5.0.1",
     "xml2js": "^0.4.19"
   }
 }
