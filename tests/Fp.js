@@ -455,28 +455,28 @@ test("Score", t => {
   const scores = fp._score(allReferences, referenceProfile, bounds);
   const expectedScores = [
     {
-      score: 1 / 6,
+      score: 0.25,
       referenceId: "refA",
       matchedSites: 1,
-      countedSites: 6
+      countedSites: 4
     },
     {
-      score: 0.5,
+      score: 0.75,
       referenceId: "refB",
       matchedSites: 3,
-      countedSites: 6
+      countedSites: 4
     },
     {
-      score: 1 / 6,
+      score: 0.25,
       referenceId: "refC",
       matchedSites: 1,
-      countedSites: 6
+      countedSites: 4
     },
     {
       score: 0,
       referenceId: "refD",
       matchedSites: 0,
-      countedSites: 6
+      countedSites: 4
     }
   ];
   t.deepEqual(_.sortBy(scores, "referenceId"), expectedScores);

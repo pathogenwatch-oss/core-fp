@@ -85,8 +85,8 @@ class Fp {
     // that position.
 
     // This is the same for all scores.  It is the number of substitution
-    // mutations in the referenceProfile which are considered during
-    // scoring.  It excludes mutations which occur outside the query
+    // positions in the referenceProfile which are considered during
+    // scoring.  It excludes positions which occur outside the query
     // sequence match.
     let countedSites = 0;
 
@@ -105,6 +105,9 @@ class Fp {
         else if (position > upperBound) return;
         const queryMutation =
           _.keys(_.get(this.substitutions, [gene, position], {}))[0] || null;
+        // There should only ever be one substitution in a given position
+        // because only one allele is used and there should only be one
+        // query sequence.
 
         const referencesWithSameMutation = new Set();
         if (queryMutation === null) {
@@ -122,7 +125,6 @@ class Fp {
               referencesWithSameMutation.add(referenceId);
             else referencesWithSameMutation.delete(referenceId);
           });
-          countedSites += 1;
         });
 
         _.forEach([...referencesWithSameMutation], referenceId => {
@@ -131,6 +133,8 @@ class Fp {
           // sequence in the same position for a given gene family
           scores[referenceId].matchedSites += 1;
         });
+
+        countedSites += 1;
       });
     });
     _.forEach(scores, score => {
@@ -176,7 +180,7 @@ class Fp {
       speciesId, // Species of the query
       subTypeAssignment, // Reference with the lowest score
       scores, // The scores for each reference
-      fingerprintSize // Total number of unique substitutions across all of the references
+      fingerprintSize // Total number of unique positions across all of the references where substitutions occur
     };
   }
 }
