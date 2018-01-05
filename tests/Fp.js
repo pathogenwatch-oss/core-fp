@@ -482,6 +482,74 @@ test("Score", t => {
   t.deepEqual(_.sortBy(scores, "referenceId"), expectedScores);
 });
 
+test("Score bounds check", t => {
+  const allReferences = ["refA", "refB", "refC"];
+  const referenceProfile = {
+    geneA: [
+      {
+        rI: 1, // Out of bounds (too early)
+        muts: {
+          AAAA: ["refA"]
+        }
+      },
+      {
+        rI: 7, // Matched
+        muts: {
+          A: ["refB"]
+        }
+      },
+      {
+        rI: 8, // Out of bounds (too long)
+        muts: {
+          TTTTT: ["refC"]
+        }
+      },
+      {
+        rI: 10, // Counted because TT is short enough but no matches
+        muts: {
+          TTTT: ["refB"],
+          TT: ["refA"]
+        }
+      }
+    ]
+  };
+  const fp = new Fp({
+    geneA: {
+      7: {
+        A: new Set(["query"])
+      },
+      10: {
+        T: new Set(["query"])
+      }
+    }
+  });
+  const bounds = {
+    geneA: [2, 11]
+  };
+  const scores = fp._score(allReferences, referenceProfile, bounds);
+  const expectedScores = [
+    {
+      score: 0,
+      referenceId: "refA",
+      matchedSites: 0,
+      countedSites: 2
+    },
+    {
+      score: 0.5,
+      referenceId: "refB",
+      matchedSites: 1,
+      countedSites: 2
+    },
+    {
+      score: 0,
+      referenceId: "refC",
+      matchedSites: 0,
+      countedSites: 2
+    }
+  ];
+  t.deepEqual(_.sortBy(scores, "referenceId"), expectedScores);
+});
+
 test("Sort scores", t => {
   const fp = new Fp();
   const scores = [

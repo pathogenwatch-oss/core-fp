@@ -101,8 +101,17 @@ class Fp {
     _.forEach(referenceProfile, (variantPostions, gene) => {
       const [lowerBound, upperBound] = bounds[gene] || [0, 0];
       _.forEach(variantPostions, ({ rI: position, muts: mutations }) => {
+        // We ignore the position if the query had a partial match for
+        // the gene and it didn't overlap this region.  We also check
+        // that the mutations don't overlap outside the region matched
+        // by the query and ignore positions where all mutations are too
+        // long to match the query region.
         if (position < lowerBound) return;
-        else if (position > upperBound) return;
+        const mutationsInBounds = _(mutations)
+          .keys()
+          .filter(mutation => position + mutation.length - 1 <= upperBound)
+          .value().length;
+        if (mutationsInBounds === 0) return;
         const queryMutation =
           _.keys(_.get(this.substitutions, [gene, position], {}))[0] || null;
         // There should only ever be one substitution in a given position
