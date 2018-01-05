@@ -311,7 +311,7 @@ test("Compare query to reference", t => {
   });
 });
 
-test.only("Calculate filtered alleles", t => {
+test("Calculate filtered alleles", t => {
   const queryCoreProfile = {
     commonGene: { alleles: [{ id: "commonGeneQuery" }] },
     commonWithDuplicates: {
