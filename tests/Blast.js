@@ -17,7 +17,7 @@ test("Percentage identity", t => {
       matchingBases: 98,
       alignmentLength: 99
     }),
-    99.0,
+    98.99,
     "98/99"
   );
   t.is(
@@ -25,7 +25,7 @@ test("Percentage identity", t => {
       matchingBases: 94,
       alignmentLength: 99
     }),
-    94.9,
+    94.95,
     "94/99"
   );
 });

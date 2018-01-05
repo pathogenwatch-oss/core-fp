@@ -89,7 +89,7 @@ async function query(queryPath, skipFp) {
   const queryLength = await whenQueryLength;
   const coreAnalyser = new Core(config);
   const assemblyId = queryName(queryPath);
-  const speciesId = SCHEME;
+  const speciesId = String(SCHEME);
   const summaryData = {
     assemblyId,
     speciesId,

@@ -387,6 +387,66 @@ test("Add Mutations", t => {
           qI: 22
         }
       ]
+    },
+    anotherReverse: {
+      hitStart: 1,
+      hitEnd: 25,
+      hitSequence: "A--AAA-AAAAAAAAAAAAAAAAAAAAA",
+      querySequence: "AAAAAAAGT--AAA--AAATTAAATAAA",
+      queryStart: 1,
+      queryEnd: 24,
+      mutations: [
+        {
+          t: "S",
+          wt: "T",
+          mut: "A",
+          rI: 4,
+          qI: 21
+        },
+        {
+          t: "S",
+          wt: "TT",
+          mut: "AA",
+          rI: 8,
+          qI: 17
+        },
+        {
+          t: "D",
+          wt: "TT",
+          mut: "--",
+          rI: 13,
+          qI: 13
+        },
+        {
+          t: "D",
+          wt: "TT",
+          mut: "--",
+          rI: 18,
+          qI: 10
+        },
+        {
+          t: "S",
+          wt: "TT",
+          mut: "AC",
+          rI: 20,
+          qI: 9
+        },
+        {
+          t: "I",
+          wt: "-",
+          mut: "T",
+          rI: 21,
+          qI: 7
+        },
+        {
+          t: "I",
+          wt: "--",
+          mut: "TT",
+          rI: 24,
+          qI: 3
+        }
+      ],
+      reverse: true
     }
   };
   _.forEach(testCases, (testCase, testName) => {
