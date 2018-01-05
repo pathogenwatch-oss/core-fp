@@ -9,9 +9,7 @@ class Fp {
   fingerprintSize() {
     let size = 0;
     _.forEach(this.substitutions || {}, positions => {
-      _.forEach(_.values(positions), mutations => {
-        size += _.keys(mutations).length;
-      });
+      size += _.keys(positions).length;
     });
     return size;
   }

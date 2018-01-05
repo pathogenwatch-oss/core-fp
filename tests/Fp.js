@@ -57,7 +57,7 @@ test("Fingerprint Size", t => {
       }
     }
   };
-  t.is(fp.fingerprintSize(), 2);
+  t.is(fp.fingerprintSize(), 1);
 
   fp.substitutions = {
     geneA: {
@@ -82,7 +82,7 @@ test("Fingerprint Size", t => {
       }
     }
   };
-  t.is(fp.fingerprintSize(), 3);
+  t.is(fp.fingerprintSize(), 2);
 
   fp.substitutions = {
     geneA: {
@@ -100,7 +100,7 @@ test("Fingerprint Size", t => {
       }
     }
   };
-  t.is(fp.fingerprintSize(), 4);
+  t.is(fp.fingerprintSize(), 3);
 });
 
 test("Add best reference", t => {
@@ -258,7 +258,7 @@ test("Update profile", t => {
       }
     }
   });
-  t.is(fp.fingerprintSize(), 4);
+  t.is(fp.fingerprintSize(), 3);
 });
 
 test("Get Profile", t => {
