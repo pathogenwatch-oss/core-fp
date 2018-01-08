@@ -781,6 +781,343 @@ test("Get Core", t => {
   t.is(actual.coreProfile.nt, 480);
 });
 
+test("Get real core", t => {
+  const hits = [
+    {
+      hitAccession: "3",
+      hitId: "vapA",
+      hitSequence: "ATGCAGTTTTACCTGCAACCGCAGGCGCAGTTTACCTACTTGGGCGTAAACGGCGGCTTTACCGACAGCGAGGGGCGGCGGTCGGGCTGCTCGGCAGCGGTCAGTGGCAAATCCGCGCCGGCATTCGGGCAAAAACCCGTTTTGCTTTGCGTAACGGTGTCAATCTTCAGCCTTTTGCCGCTTTTAATGTTTTGCACAGGTCAAAATCTTTCGGCATGGAAATGGACGGCGAAAAACAGACGCTGGCAGGCAGGACGGCGCTCGAAGGGCGGTTTGGCATTGAAGCCGGTTGGAAAGGCCATATGTCCGCACGCATCGGATACGGCAAAAGGACGGACGGCGACAAAGAAGCCGCATTGTCGGTCAAATGGTTGTTTTGATGCGCCGGGAAATGTTTTGACACACAGGCGGCACACCTGCACGGCCCCGTGCGCCGCCCCGCAAACCGATCCGAACCCTGCCGCCCCGAAGGGCGGGGCATAA",
+      hitStart: 1,
+      hitEnd: 483,
+      reverse: false,
+      queryId: "ERR1549755.17328_4_44.1 Top Hit:WHO_G Neisseria gonorrhoeae WHO G",
+      querySequence: "ATGCAGTTTTACCTGCAACCGCAGGCGCAGTTTACCTACTTGGGCGTAAACGGCGGCTTTACCGACAGCGAGGGGCGGCGGTCGGGCTGCTCGGCAGCGGTCAGTGGCAAATCCGCGCCGGCATTCGGGCAAAAACCCGTTTTGCTTTGCGTAACGGTGTCAATCTTCAGCCTTTTGCCGCTTTTAATGTTTTGCACAGGTCAAAATCTTTCGGCATGGAAATGGACGGCGAAAAACAGACGCTGGCAGGCAGGACGGCGCTCGAAGGGCGGTTTGGCATTGAAGCCGGTTGGAAAGGCCATATGTCCGCACGCATCGGATACGGCAAAAGGACGGACGGCGACAAAGAAGCCGCATTGTCGGTCAAATGGTTGTTTTGATGCGCCGGGAAATGTTTTGACGCACAGGCGGCACACCTGCACGGCCCCGTGCGCCGCCCCGCAAACCGATCCGAACCCTGCCGCCCCGAAGGGCGGGGCATAA",
+      queryStart: 270073,
+      queryEnd: 270555,
+      matchingBases: 482,
+      alignmentLength: 483,
+      eValue: 0,
+      pIdent: 99.79
+    },
+    {
+      hitAccession: "1",
+      hitId: "group_2700",
+      hitSequence: "TCATTTCCACAACGCGCGTTTCAACATAATCAACCAATCCTTCTTATCCAAAACGGGGCGTTGTGCAAACACATCGTATCGGCACGCGTCCAGTTTCTGCAAAATCAACTGCGCCCCCAACACAATCATACGGAGTTCCAAACCGATACGCCCTTTCAATTCGCGCGCCAAAGGCGAACCCGCCTTCAGCATACGGAATGCACGCCGGCACTCATACGCCATCAGCCGCTGAAACGCCGCATCCGCCCGTCCTGCTGCGATCTGTTCCTCAGAAACACCGAATTTCAACAAATCGTCCTGCGGGATATAAACCCTGCCCTTTTGCCAATCCACAGCTACATCCTGCCAAAAATTCACCAGTTGCAAAGCCGTACAAATACCGTCGCTTTGCGCTACGCACACCGCATCCGTTTTCCCGTATAAAGCCAGCATAATGCGTCCGACAGGGTTGGCGGAACGCCGGCAATAATCGGTCAGATCGCCGAAATGCGCGTACCGCGTTTTAACCACATCCTGCGAAAACGCCGAGAGCAGATCATAAAACGGCTGCAAATCCAAACCGAACGGCACAACCGCCTCGGCATCCAATCGTGCAATCAAAGGATGCGCCGACCGGCCGCCCGATGCCAACACGTCCAACTCGCGCCGCAAACCCTCCAACCCCGACAACCTGGCTTCAGACGGCATACTGCCCTCGTCCGCCATATCGTCCGCCGTCCGTGCAAACGCATACACCGCATGAACCGGCTTCCTCAACCTGCGCGGCAAAACCAGCGAACCGACGGGAAAATTCTCATAATGCCCAACCGACAT",
+      hitStart: 1,
+      hitEnd: 813,
+      reverse: true,
+      queryId: "ERR1549755.17328_4_44.7 Top Hit:WHO_K Neisseria gonorrhoeae WHO K",
+      querySequence: "TCATTTCCACAACGCGCGTTTCAACATAATCAACCAATCCTTCTTATCCAAAACGGGGCGTTGTGCAAACACATCGTATCGGCACGCGTCCAGTTTCTGCAAAATCAACTGCGCCCCCAACACAATCATACGGAGTTCCAAACCGATACGCCCTTTCAATTCGCGCGCCAAAGGCGAACCCGCCTTCAGCATACGGAATGCACGCCGGCACTCATACGCCATCAGCCGCTGAAACGCCGCATCCGCCCGTCCTGCTGCGATCTGTTCCTCAGAAACACCGAATTTCAACAAATCGTCCTGCGGGATATAAACCCTGCCCTTTTGCCAATCCACAGCTACATCCTGCCAAAAATTCACCAGTTGCAAAGCCGTACAAATACCGTCGCTTTGCGCTACGCACACCGCATCCGTTTTCCCGTATAAAGCCAGCATAATGCGTCCGACAGGGTTGGCGGAACGCCGGCAATAATCGGTCAGATCGCCGAAATGCGCGTACCGCGTTTTAACCACATCCTGCGAAAACGCCGAGAGCAGATCATAAAACGGCTGCAAATCCAAACCGAACGGCACAACCGCCTCGGCATCCAATCGTGCAATCAAAGGATGCGCCGACCGGCCGCCCGATGCCAACACGTCCAACTCGCGCCGCAAACCCTCCAACCCCGACAACCTGGCTTCAGACGGCATACTGCCCTCGTCCGCCATATCGTCCGCCGTCCGTGCAAACGCATACACCGCATGAACCGGCTTCCTCAACCTGCGCGGCAAAACCAGCGAACCGACGGGAAAATTCTCATAATGCCCAACCGACAT",
+      queryStart: 25576,
+      queryEnd: 26388,
+      matchingBases: 813,
+      alignmentLength: 813,
+      eValue: 0,
+      pIdent: 100
+    },
+    {
+      hitAccession: "2",
+      hitId: "group_3366",
+      hitSequence: "CTATGCACCCCCTTGCGAGCCCGACACTACGCAACATCTTGAGAACCCATCCTGTCAAGAATACCCGAACCGTCCCGATACACCGTAATCCTAAAACCCGTCATTCCCGCGCTGCAATGGGACATCGGCGGCAGCGGGGCGGTTTTCCCTTCGCTCGCACTGTTTCTGCTCTGTTTCATCATAGGTATGCACAACACGGGGATGACGCTTCTGCCGGGCGGTGCAATCCGTTCGACGCACATGGCCCGGCACGGCAGCCGACTTGGGCATCGAAATCCCGCGCGTGCCGTACTATAGTGGATTAA",
+      hitStart: 35,
+      hitEnd: 339,
+      reverse: false,
+      queryId: "ERR1549755.17328_4_44.18 Top Hit:WHO_K Neisseria gonorrhoeae WHO K",
+      querySequence: "CTATGCACCCCCTTGCGAGCCCGACACTACGCAACATCTTGAGAACCCATCCTGTCAAGAATACCCGAACCGTCCCGATACACCGTAATCCTAAAACCCGCCATTCCCGCGCTGCAATGGGACATCGGCGGCAGCGGGGCGGTTTTCCCTTCGCTCGCACTGTTTCTGCTCTGTTTCATCATAGGTATGCACAACACGGGGATGACGCTTCTGCCGGGCGGTGCAATCTGTTCGACGCACATGGCCCGGCACGGCAGCCGACTTGGGCATCGAAATCCCGCGCGTGCCGTACTATAGTGGATTAA",
+      queryStart: 1,
+      queryEnd: 305,
+      matchingBases: 303,
+      alignmentLength: 305,
+      eValue: 2.6681e-156,
+      pIdent: 99.34
+    },
+    {
+      hitAccession: "0",
+      hitId: "group_540",
+      hitSequence: "TTACCAAGCAAACGGTTTCCGCTTCATATCCGAAAGGTTGTCAACTTCATTATCCAGCAAGAACTGCTCAAAAGCATTCCAACCTTTCTTTTCCACCAATTCTGCTTCCTGTTTATACAAGGGGACAAGCAAAGGGAAAACGATATTGTAGTGTTCGCCATAACAGACCTGAAAATCATCATCGAAATAAAATGGGGCGGAAACATACAGTGCATCCAT",
+      hitStart: 1,
+      hitEnd: 219,
+      reverse: true,
+      queryId: "ERR1549755.17328_4_44.16 Top Hit:WHO_L Neisseria gonorrhoeae WHO L",
+      querySequence: "TTACCAAGCAAACGGTTTCCGCTTCATATCCGAAAGGTTGTCAACTTCATTATCCAGCAAGAACTGCTCAAAAGCATTCCAACCTTTCTTTTCCACCAATTCTGCTTCCTGTTTATACAAGGGGACAAGCAAAGGGAAAACGATATTGTAGTGTTCGCCATAACAGACCTGAAAATCATCATCGAAATAAAATGGGGCGGAAACATACAGTGCATCCAT",
+      queryStart: 33105,
+      queryEnd: 33323,
+      matchingBases: 219,
+      alignmentLength: 219,
+      eValue: 3.64375e-112,
+      pIdent: 100
+    },
+    {
+      hitAccession: "0",
+      hitId: "group_540",
+      hitSequence: "ATGGATGCACTGTATGTTTCCGCCCCATTTTATTTCGATGATGATTTTCAGGTCTGTTATGGCGAACACTACAATATCGTTTTCCCTTTGCTTGTCCCCTTGTATAAACAGGAAGCAGAATTGGTGGAAAAGAAAGGTTGGAATGCTTTTGAGCAGTTCTTGCTGGATAATGAAGTTGACAACCTTTCGGATATGAAGCGGAAACCGTTTGCTTGGTAA",
+      hitStart: 1,
+      hitEnd: 219,
+      reverse: false,
+      queryId: "ERR1549755.17328_4_44.10 Top Hit:WHO_M Neisseria gonorrhoeae WHO M",
+      querySequence: "ATGGACGCACTGTATGTTTCCGCCCCATTTTATTTCGACGATGATTTCCAAGTCTGTTATGGCGAACACTACAATATTGTTTTCCCTTTGCTTGTCCCCTTGTATAAACAGGAAGCCGAATTGGTGGAAAAAAAGGGTTGGAATGCTTTTGAGCAGTTCTTGTTGGATAATGAAGTTGGCAACCTTTCGGATATGAATAGGAAACCGTTTGTTTGGTAA",
+      queryStart: 3411,
+      queryEnd: 3629,
+      matchingBases: 206,
+      alignmentLength: 219,
+      eValue: 5.62212e-94,
+      pIdent: 94.06
+    },
+    {
+      hitAccession: "2",
+      hitId: "group_3366",
+      hitSequence: "ATGCGGCGGGCTGAAGCCCGCCCTGCAACCCTCTCTATGCACCCCCTTGCGAGCCCGACACTACGCAACATCTTGAGAACCCATCCTGTCAAGAATACCCGAACCGTCCCGATACACCGTAATCCTAAAACCCGTCATTCCCGCGC",
+      hitStart: 1,
+      hitEnd: 146,
+      reverse: false,
+      queryId: "ERR1549755.17328_4_44.13 Top Hit:WHO_K Neisseria gonorrhoeae WHO K",
+      querySequence: "ATGCGGCGGGCTGAAGCCCGCCCTGCAACCCTCTCTATGCACCCCCTTGCGAGCCCGACACTACGCAACATCTTGAGAACCCATCCTGTCAAGAATACCCGAACCGTCCCGATACACCGTAATCCTAAAACCCGCCATTCCCGCGC",
+      queryStart: 55315,
+      queryEnd: 55460,
+      matchingBases: 145,
+      alignmentLength: 146,
+      eValue: 9.44979e-71,
+      pIdent: 99.32
+    },
+    {
+      hitAccession: "2",
+      hitId: "group_3366",
+      hitSequence: "TGCACCCCCTTGCGAGCCCGACACTACGCAACATCTTGAGAACCCATCCTGTCAAGAATACCCGAACCGTCCCGATACACCGTAATCCTAAAACCCGTCATTCCCGCGC",
+      hitStart: 38,
+      hitEnd: 146,
+      reverse: false,
+      queryId: "ERR1549755.17328_4_44.30 Top Hit:WHO_L Neisseria gonorrhoeae WHO L",
+      querySequence: "TGCACCCCCTTGCGAGCCCGACACTACGCAACATCTTGAGAACCCATCCTGTCAAGAATACCCGAACCGTCCCGATACACCGTAATCCTAAAACCCGCCATTCCCGCGC",
+      queryStart: 1,
+      queryEnd: 109,
+      matchingBases: 108,
+      alignmentLength: 109,
+      eValue: 1.49168e-51,
+      pIdent: 99.08
+    }
+  ];
+  const summaryData = {
+    assemblyId: "example",
+    speciesId: 485,
+    queryLength: 2155105
+  };
+  const coreAnalyser = new Core({
+    minMatchCoverage: 80.0,
+    name: "Neisseria gonorrhoeae",
+    overlapThreshold: 40,
+    geneLengths: {
+      abgT: 1569,
+      group_2700: 813,
+      group_3366: 339,
+      group_540: 219,
+      vapA: 483
+    }
+  });
+  const actual = coreAnalyser.getCore(hits, summaryData);
+  const expected = {
+    coreSummary: {
+      assemblyId: "example",
+      speciesId: 485,
+      familiesMatched: 4,
+      completeAlleles: 4,
+      kernelSize: 5,
+      percentKernelMatched: 80.0,
+      percentAssemblyMatched: 0.1
+    },
+    coreProfile: {
+      id: "example",
+      size: 5,
+      nt: 2039,
+      coreProfile: {
+        vapA: {
+          alleles: [
+            {
+              id: "e5c2930616d1778252b1cc0133a92cf2d9c845f8",
+              muts: [
+                {
+                  t: "S",
+                  wt: "A",
+                  mut: "G",
+                  rI: 402,
+                  qI: 270474
+                }
+              ],
+              full: true,
+              qId: "ERR1549755.17328_4_44.1 Top Hit:WHO_G Neisseria gonorrhoeae WHO G",
+              qR: [270073, 270555],
+              rR: [1, 483],
+              pid: 99.79,
+              evalue: 0,
+              r: false
+            }
+          ],
+          refLength: 483
+        },
+        group_2700: {
+          alleles: [
+            {
+              id: "6ec86f685350dabde157dd785cae8ed31fe18bb7",
+              muts: [],
+              full: true,
+              qId: "ERR1549755.17328_4_44.7 Top Hit:WHO_K Neisseria gonorrhoeae WHO K",
+              qR: [25576, 26388],
+              rR: [1, 813],
+              pid: 100,
+              evalue: 0,
+              r: true
+            }
+          ],
+          refLength: 813
+        },
+        group_3366: {
+          alleles: [
+            {
+              id: "16297782ec34cdd10d3192d40d19396cf428d01d",
+              muts: [
+                {
+                  t: "S",
+                  wt: "T",
+                  mut: "C",
+                  rI: 135,
+                  qI: 101
+                },
+                {
+                  t: "S",
+                  wt: "C",
+                  mut: "T",
+                  rI: 263,
+                  qI: 229
+                }
+              ],
+              full: false,
+              qId: "ERR1549755.17328_4_44.18 Top Hit:WHO_K Neisseria gonorrhoeae WHO K",
+              qR: [1, 305],
+              rR: [35, 339],
+              pid: 99.34,
+              evalue: 2.6681e-156,
+              r: false
+            }
+          ],
+          refLength: 339
+        },
+        group_540: {
+          alleles: [
+            {
+              id: "48a627ec2997b8d3d58291af30006c2699bbea2d",
+              muts: [],
+              full: true,
+              qId: "ERR1549755.17328_4_44.16 Top Hit:WHO_L Neisseria gonorrhoeae WHO L",
+              qR: [33105, 33323],
+              rR: [1, 219],
+              pid: 100,
+              evalue: 3.64375e-112,
+              r: true
+            },
+            {
+              id: "9b6a20d1f2474588ed5ba9a2b915765eedb69387",
+              muts: [
+                {
+                  t: "S",
+                  wt: "T",
+                  mut: "C",
+                  rI: 6,
+                  qI: 3416
+                },
+                {
+                  t: "S",
+                  wt: "T",
+                  mut: "C",
+                  rI: 39,
+                  qI: 3449
+                },
+                {
+                  t: "S",
+                  wt: "T",
+                  mut: "C",
+                  rI: 48,
+                  qI: 3458
+                },
+                {
+                  t: "S",
+                  wt: "G",
+                  mut: "A",
+                  rI: 51,
+                  qI: 3461
+                },
+                {
+                  t: "S",
+                  wt: "C",
+                  mut: "T",
+                  rI: 78,
+                  qI: 3488
+                },
+                {
+                  t: "S",
+                  wt: "A",
+                  mut: "C",
+                  rI: 117,
+                  qI: 3527
+                },
+                {
+                  t: "S",
+                  wt: "G",
+                  mut: "A",
+                  rI: 132,
+                  qI: 3542
+                },
+                {
+                  t: "S",
+                  wt: "A",
+                  mut: "G",
+                  rI: 135,
+                  qI: 3545
+                },
+                {
+                  t: "S",
+                  wt: "C",
+                  mut: "T",
+                  rI: 163,
+                  qI: 3573
+                },
+                {
+                  t: "S",
+                  wt: "A",
+                  mut: "G",
+                  rI: 179,
+                  qI: 3589
+                },
+                {
+                  t: "S",
+                  wt: "GC",
+                  mut: "TA",
+                  rI: 198,
+                  qI: 3608
+                },
+                {
+                  t: "S",
+                  wt: "C",
+                  mut: "T",
+                  rI: 212,
+                  qI: 3622
+                }
+              ],
+              full: true,
+              qId: "ERR1549755.17328_4_44.10 Top Hit:WHO_M Neisseria gonorrhoeae WHO M",
+              qR: [3411, 3629],
+              rR: [1, 219],
+              pid: 94.06,
+              evalue: 5.62212e-94,
+              r: false
+            }
+          ],
+          refLength: 219
+        }
+      }
+    }
+  };
+  t.deepEqual(actual, expected);
+});
+
 test("Hit filtering order", t => {
   const sandbox = sinon.sandbox.create();
 
