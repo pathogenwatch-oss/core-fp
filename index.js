@@ -171,3 +171,5 @@ if (require.main === module) {
 }
 
 module.exports = { BlastParser };
+
+// TODO: counted sites in fp should vary between references because not all references fully match the core

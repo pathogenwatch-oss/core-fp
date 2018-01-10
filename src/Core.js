@@ -218,7 +218,7 @@ class Core {
       _.forEach(contigHits, (hitA, idx) => {
         _.forEach(contigHits.slice(idx + 1), hitB => {
           const overlap = hitsOverlap(hitA, hitB);
-          if (overlap >= 40) {
+          if (overlap > 40) {
             if (hitA.pIdent !== hitB.pIdent) {
               overlaped.add(hitA.pIdent < hitB.pIdent ? hitA : hitB);
             } else if (hitA.matchingBases !== hitB.matchingBases) {
@@ -242,7 +242,13 @@ class Core {
         });
       });
     });
-    _.remove(hits, hit => overlaped.has(hit));
+    _.remove(hits, hit => {
+      if (overlaped.has(hit)) {
+        logger("trace:removeHit:overlap")(hit);
+        return true;
+      }
+      return false;
+    });
   }
 
   _removeShortHits(hits) {
@@ -252,11 +258,14 @@ class Core {
       geneLengths,
       length => length * minMatchCoveragePercent
     );
-    _.remove(
-      hits,
-      ({ hitId, hitStart, hitEnd }) =>
-        Math.abs(hitStart - hitEnd) + 1 < (minMatchCoverage[hitId] || 0)
-    );
+    _.remove(hits, hit => {
+      const { hitId, hitStart, hitEnd } = hit;
+      if (Math.abs(hitStart - hitEnd) + 1 < (minMatchCoverage[hitId] || 0)) {
+        logger("trace:removeHit:short")(hit);
+        return true;
+      }
+      return false;
+    });
   }
 
   _removePartialHits(hits) {
@@ -272,7 +281,13 @@ class Core {
         hit.full = false;
       }
     });
-    _.remove(hits, hit => complete.has(hit.hitId) && !hit.full);
+    _.remove(hits, hit => {
+      if (complete.has(hit.hitId) && !hit.full) {
+        logger("trace:removeHit:partial")(hit);
+        return true;
+      }
+      return false;
+    });
   }
 
   getHitStats(hits) {
