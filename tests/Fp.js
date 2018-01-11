@@ -572,3 +572,35 @@ test("Calculate FP", t => {
 
   sandbox.restore();
 });
+
+test("Remove non-universal genes", t => {
+  const fp = new Fp(
+    {
+      geneA: {
+        5: {
+          A: ["refA"]
+        }
+      },
+      geneB: {
+        10: {
+          A: ["refB"]
+        }
+      }
+    },
+    {
+      refA: {
+        geneA: [1, 10],
+        geneB: [1, 10]
+      },
+      refB: {
+        geneB: [1, 20]
+      }
+    }
+  );
+  fp.removeNonUniversalGenes();
+  t.deepEqual(fp.substitutions, { geneB: { 10: { A: ["refB"] } } });
+  t.deepEqual(fp.bounds, {
+    refA: { geneB: [1, 10] },
+    refB: { geneB: [1, 20] }
+  });
+});

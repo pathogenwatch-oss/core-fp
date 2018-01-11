@@ -143,6 +143,7 @@ async function build(references) {
     { concurrency: 3 }
   );
   await whenCoresAdded;
+  fp.removeNonUniversalGenes();
   return fp.dump();
 }
 

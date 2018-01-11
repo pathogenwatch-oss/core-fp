@@ -7,6 +7,36 @@ class Fp {
     this.bounds = bounds;
   }
 
+  removeNonUniversalGenes() {
+    logger("debug")("Removing non-universal genes");
+    const geneCounts = {};
+    _.forEach(this.bounds, (geneBounds, __) => {
+      _.forEach(geneBounds, (__, gene) => {
+        geneCounts[gene] = (geneCounts[gene] || 0) + 1;
+      });
+    });
+    const refCount = _.keys(this.bounds).length;
+    const nonUniversalGenes = _(geneCounts)
+      .toPairs()
+      .filter(([__, count]) => count !== refCount)
+      .map(([gene, __]) => gene)
+      .value();
+
+    logger("trace")(
+      `Removing the following genes:\n${nonUniversalGenes.join("\n")}`
+    );
+    _.forEach(this.bounds, (geneBounds, reference) => {
+      const genesInReference = _.keys(geneBounds);
+      _.forEach(genesInReference, gene => {
+        if (_.includes(nonUniversalGenes, gene)) delete geneBounds[gene];
+      });
+    });
+    const genesInSubstitutions = _.keys(this.substitutions);
+    _.forEach(genesInSubstitutions, gene => {
+      if (_.includes(nonUniversalGenes, gene)) delete this.substitutions[gene];
+    });
+  }
+
   dump() {
     return {
       substitutions: this.substitutions,
