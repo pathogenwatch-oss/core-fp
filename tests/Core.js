@@ -495,7 +495,7 @@ test("Remove Overlapping hits", t => {
       //    BBBBB
       input: [
         { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90 },
-        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 80 }
+        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 80 }
       ],
       output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90 }]
     },
@@ -504,9 +504,9 @@ test("Remove Overlapping hits", t => {
       //    BBBBB <- Better
       input: [
         { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
-        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 }
+        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90 }
       ],
-      output: [{ queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 }]
+      output: [{ queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90 }]
     },
     overlapMiddleBottom: {
       // AAAAAAAAA
@@ -575,44 +575,44 @@ test("Remove Overlapping hits", t => {
     threeHits: {
       input: [
         { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
-        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 },
+        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90 },
         { queryStart: 151, queryEnd: 250, queryId: "foo", pIdent: 85 }
       ],
       output: [
-        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 },
+        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90 },
         { queryStart: 151, queryEnd: 250, queryId: "foo", pIdent: 85 }
       ]
     },
     middleOfThreeHits: {
       input: [
         { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
-        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 },
-        { queryStart: 121, queryEnd: 220, queryId: "foo", pIdent: 85 }
+        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90 },
+        { queryStart: 120, queryEnd: 220, queryId: "foo", pIdent: 85 }
       ],
-      output: [{ queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 }]
+      output: [{ queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90 }]
     },
     lastOfThreeHits: {
       input: [
         { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
-        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 },
-        { queryStart: 121, queryEnd: 220, queryId: "foo", pIdent: 95 }
+        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90 },
+        { queryStart: 120, queryEnd: 220, queryId: "foo", pIdent: 95 }
       ],
       // It's not obvious whether we should keep the first hit; my suggestion is
       // that this scenario is unlikely and this is the simplest solution to
       // implement.
-      output: [{ queryStart: 121, queryEnd: 220, queryId: "foo", pIdent: 95 }]
+      output: [{ queryStart: 120, queryEnd: 220, queryId: "foo", pIdent: 95 }]
     },
     fourHits: {
       input: [
         { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
-        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 },
-        { queryStart: 121, queryEnd: 220, queryId: "foo", pIdent: 85 },
-        { queryStart: 181, queryEnd: 280, queryId: "foo", pIdent: 95 }
+        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90 },
+        { queryStart: 120, queryEnd: 220, queryId: "foo", pIdent: 85 },
+        { queryStart: 180, queryEnd: 280, queryId: "foo", pIdent: 95 }
       ],
       // This is very unlikely but this makes some sort of sense.
       output: [
-        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 },
-        { queryStart: 181, queryEnd: 280, queryId: "foo", pIdent: 95 }
+        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90 },
+        { queryStart: 180, queryEnd: 280, queryId: "foo", pIdent: 95 }
       ]
     }
   };

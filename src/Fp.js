@@ -2,8 +2,21 @@ const _ = require("lodash");
 const logger = require("debug");
 
 class Fp {
-  constructor(substitutions = {}) {
+  constructor(substitutions = {}, bounds = {}) {
     this.substitutions = substitutions;
+    this.bounds = bounds;
+  }
+
+  dump() {
+    return {
+      substitutions: this.substitutions,
+      bounds: this.bounds
+    };
+  }
+
+  static load(data) {
+    const { substitutions, bounds } = data;
+    return new Fp(substitutions, bounds);
   }
 
   fingerprintSize() {
@@ -44,35 +57,16 @@ class Fp {
         _.forEach(fewestSubstitutions, ({ t, mut, rI }) => {
           if (t !== "S") return;
           if (!_.has(this.substitutions, [gene, rI, mut]))
-            _.setWith(this.substitutions, [gene, rI, mut], new Set(), Object);
-          this.substitutions[gene][rI][mut].add(name);
+            _.setWith(this.substitutions, [gene, rI, mut], [], Object);
+          this.substitutions[gene][rI][mut].push(name);
         });
       }
     });
-    return bounds;
+    this.bounds[name] = bounds;
   }
 
-  getProfile() {
-    logger("debug")(`Formatting substitutions for output`);
-    // Reformat the substitutions so that they can be saved as JSON and
-    // make them easier to query later.
-    const profile = {};
-    _.forEach(this.substitutions, (substitutionPositions, gene) => {
-      const positions = _.keys(substitutionPositions).sort((a, b) => a - b);
-      profile[gene] = profile[gene] || [];
-      _.forEach(positions, position => {
-        const mutations = substitutionPositions[position];
-        profile[gene].push({
-          rI: Number(position),
-          muts: _.mapValues(mutations, references => [...references])
-        });
-      });
-    });
-    return profile;
-  }
-
-  _score(allReferences, referenceProfile, bounds) {
-    logger("debug")(`Comparing against reference profiles`);
+  _score(queryName, queryFp) {
+    logger("debug")(`Scoring reference profiles against query`);
     // Score is a comparison of substitution mutations between a query
     // and each of the references.  It doesn't matter how many bases
     // are part of the substitution mutation, they're only counted
@@ -84,53 +78,78 @@ class Fp {
     // substitution as a query or if they both lack a substitution in
     // that position.
 
-    // This is the same for all scores.  It is the number of substitution
-    // positions in the referenceProfile which are considered during
-    // scoring.  It excludes positions which occur outside the query
-    // sequence match.
-    let countedSites = 0;
+    // Mutations which occur within a region which aren't matched in
+    // the query or the reference are ignored.
 
-    const scores = _(allReferences)
+    const queryBounds = queryFp.bounds[queryName];
+    const querySubstitutions = {};
+    _.forEach(queryFp.substitutions, (substitutionPositions, gene) => {
+      _.forEach(substitutionPositions, (substitutions, position) => {
+        _.forEach(substitutions, (queries, substitution) => {
+          if (_.includes(queries, queryName))
+            _.setWith(
+              querySubstitutions,
+              [gene, position],
+              substitution,
+              Object
+            );
+        });
+      });
+    });
+
+    const referenceNames = _.keys(this.bounds);
+    const scores = _(referenceNames)
       .map(referenceId => ({
         referenceId,
-        matchedSites: 0
+        matchedSites: 0,
+        countedSites: 0
       }))
       .keyBy("referenceId")
       .value();
 
-    _.forEach(referenceProfile, (variantPostions, gene) => {
-      const [lowerBound, upperBound] = bounds[gene] || [0, 0];
-      _.forEach(variantPostions, ({ rI: position, muts: mutations }) => {
+    _.forEach(this.substitutions, (substitutionPositions, gene) => {
+      const [queryStart, queryEnd] = queryBounds[gene] || [0, 0];
+      _.forEach(substitutionPositions, (substitutions, _position) => {
         // We ignore the position if the query had a partial match for
         // the gene and it didn't overlap this region.  We also check
         // that the mutations don't overlap outside the region matched
         // by the query and ignore positions where all mutations are too
         // long to match the query region.
-        if (position < lowerBound) return;
-        const mutationsInBounds = _(mutations)
+        const position = Number(_position);
+        if (position < queryStart) return;
+        const substitutionsInBounds = _(substitutions)
           .keys()
-          .filter(mutation => position + mutation.length - 1 <= upperBound)
+          .filter(s => position + s.length - 1 <= queryEnd)
           .value().length;
-        if (mutationsInBounds === 0) return;
-        const queryMutation =
-          _.keys(_.get(this.substitutions, [gene, position], {}))[0] || null;
-        // There should only ever be one substitution in a given position
-        // because only one allele is used and there should only be one
-        // query sequence.
+        if (substitutionsInBounds === 0) return;
 
+        const querySubstitution = _.get(
+          querySubstitutions,
+          [gene, position],
+          null
+        );
+
+        // We want to know the number of matching substitutions for each
+        // reference.  i.e. if there is a substitution in the query, the
+        // reference matches if it has the same substitution.  If the
+        // query doesn't have a substitution in this position, all of the
+        // references which don't have a substitution there also match.
         const referencesWithSameMutation = new Set();
-        if (queryMutation === null) {
-          _.forEach(allReferences, referenceId => {
-            // If the query doesn't have any substitutions we'll increment
-            // the score of all the references which also lack substitutions
-            // in this position.
-            referencesWithSameMutation.add(referenceId);
-          });
-        }
 
-        _.forEach(mutations, (references, mutation) => {
+        _.forEach(referenceNames, referenceId => {
+          const [refStart, refEnd] = this.bounds[referenceId][gene] || [0, 0];
+          if (position >= refStart && position <= refEnd) {
+            scores[referenceId].countedSites += 1; // The query and reference both match this region
+            // The query doesn't have a mutation here so we'll add in all of the
+            // references and remove those which do have a substitution here.
+            if (querySubstitution === null)
+              referencesWithSameMutation.add(referenceId);
+          }
+        });
+
+        _.forEach(substitutions, (references, mutation) => {
           _.forEach(references, referenceId => {
-            if (queryMutation === mutation)
+            if (querySubstitution === mutation)
               referencesWithSameMutation.add(referenceId);
             else referencesWithSameMutation.delete(referenceId);
           });
@@ -142,17 +161,17 @@ class Fp {
           // sequence in the same position for a given gene family
           scores[referenceId].matchedSites += 1;
         });
-
-        countedSites += 1;
       });
     });
+
     _.forEach(scores, score => {
-      const { matchedSites } = score;
-      score.countedSites = countedSites; // eslint-disable-line no-param-reassign
+      const { matchedSites, countedSites } = score;
       // The score itself is the number of matches between a query and the
       // reference divided by the number of substitution mutations which
       // were considered.
-      score.score = matchedSites / countedSites; // eslint-disable-line no-param-reassign
+      if (countedSites === 0)
+        score.score = 0; // eslint-disable-line no-param-reassign
+      else score.score = matchedSites / countedSites; // eslint-disable-line no-param-reassign
     });
     return _.values(scores);
   }
@@ -169,21 +188,19 @@ class Fp {
   }
 
   // eslint-disable-next-line
-  static calculateFp(coreProfile, referenceDetails, summaryData) {
-    // Given a query sequence, fingerprint it against pre-profiled
-    // references.  Format it for output.
-    const {
-      referenceProfile,
-      referenceNames,
-      fingerprintSize
-    } = referenceDetails;
+  calculateFp(coreProfile, summaryData) {
+    // This is an FP for some reference sequences.  Given a query coreProfile
+    // calculate the FP fields of the core profile.
     const { assemblyId, speciesId } = summaryData;
     logger("debug")(`Calculating the FP for ${assemblyId}`);
-    const fp = new this({});
-    const bounds = fp.addCore(assemblyId, coreProfile);
-    const unsortedScores = fp._score(referenceNames, referenceProfile, bounds);
-    const scores = fp._sortScores(unsortedScores);
+
+    const queryFp = new Fp();
+    queryFp.addCore(assemblyId, coreProfile);
+    const unsortedScores = this._score(assemblyId, queryFp);
+    const scores = this._sortScores(unsortedScores);
     const { referenceId: subTypeAssignment } = scores[0];
+
+    const fingerprintSize = this.fingerprintSize();
     return {
       assemblyId, // Name of the query sequence
       speciesId, // Species of the query

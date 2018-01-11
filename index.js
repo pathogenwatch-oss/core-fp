@@ -99,12 +99,12 @@ async function query(queryPath, skipFp) {
   const referenceDetails = await whenReferenceDetails;
   if (!skipFp) {
     logger("debug")("Adding FP to Core");
+    const referenceFp = Fp.load(referenceDetails);
     const { coreProfile: queryCoreProfile } = core.coreProfile;
-    const fp = Fp.calculateFp(queryCoreProfile, referenceDetails, summaryData);
-    core.fp = fp;
+    core.fp = referenceFp.calculateFp(queryCoreProfile, summaryData);
 
     logger("debug")("Adding Filter to Core");
-    const { subTypeAssignment: referenceId } = fp;
+    const { subTypeAssignment: referenceId } = core.fp;
     const filter = new Filter();
     const { referenceProfile } = referenceDetails;
     const genes = _.keys(referenceProfile);
@@ -142,12 +142,8 @@ async function build(references) {
     },
     { concurrency: 3 }
   );
-  const referenceNames = await whenCoresAdded;
-  return {
-    referenceNames,
-    referenceProfile: fp.getProfile(),
-    fingerprintSize: fp.fingerprintSize()
-  };
+  await whenCoresAdded;
+  return fp.dump();
 }
 
 if (require.main === module) {
@@ -156,6 +152,7 @@ if (require.main === module) {
     query(queryPath, RUN_FP)
       .then(JSON.stringify)
       .then(console.log)
+      .then(() => logger("debug")("Finished"))
       .catch(logger("error"));
   } else if (argv.command === "build") {
     const { references } = argv;
@@ -166,10 +163,9 @@ if (require.main === module) {
         return `Wrote FP profile for ${SCHEME} to ${SCHEME_PROFILE_PATH}`;
       })
       .then(console.log)
+      .then(() => logger("debug")("Finished"))
       .catch(logger("error"));
   }
 }
-
-module.exports = { BlastParser };
 
 // TODO: counted sites in fp should vary between references because not all references fully match the core
