@@ -118,7 +118,9 @@ class Filter {
     const filteredAlleles = [];
     _.forEach(alleleDifferences, (alleles, gene) => {
       _.forEach(alleles, ({ length, variance }, alleleId) => {
-        const expectedVariations = Math.max(1, length * mutationRate);
+        const expectedVariations = Math.round(
+          Math.max(1, length * mutationRate)
+        );
         const varianceLikelihood = cdf(variance, {
           lambda: expectedVariations
         });
