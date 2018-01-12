@@ -78,14 +78,14 @@ test("Compare alleles unambiguously", t => {
   const filter = new Filter();
 
   const referenceAlleles = [
-    { id: "A", muts: [{ t: "S", mut: "A", rI: 1 }] },
-    { id: "B", muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "A", rI: 3 }] },
-    { id: "C", muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "A", rI: 3 }, { t: "S", mut: "A", rI: 5 }] }
+    { id: "A", muts: [{ t: "S", mut: "A", rI: 1 }], rR: [1, 120] },
+    { id: "B", muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "A", rI: 3 }], rR: [1, 150] },
+    { id: "C", muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "A", rI: 3 }, { t: "S", mut: "A", rI: 5 }], rR: [1, 150] }
   ];
 
   const queryAlleles = [
-    { id: "v", muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "T", rI: 100 }], qR: [1, 200] },
-    { id: "w", muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "A", rI: 3 }, { t: "S", mut: "T", rI: 100 }, { t: "S", mut: "T", rI: 102 }], qR: [250, 1] }
+    { id: "v", muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "T", rI: 100 }], rR: [1, 110] },
+    { id: "w", muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "A", rI: 3 }, { t: "S", mut: "T", rI: 100 }, { t: "S", mut: "T", rI: 102 }], rR: [1, 200] }
   ];
 
   // You could map the distances between these alleles as follows:
@@ -103,23 +103,20 @@ test("Compare alleles unambiguously", t => {
       ref: summariseAlleles(shuffledReferences),
       query: summariseAlleles(shuffledQueries)
     });
-    const {
-      allelesCompared,
-      differences,
-      bestMatches
-    } = filter._compareAlleles(shuffledQueries, shuffledReferences);
-    t.is(allelesCompared, 2, shuffleSummary);
-    t.is(differences, 3, shuffleSummary);
+    const bestMatches = filter._compareAlleles(
+      shuffledQueries,
+      shuffledReferences
+    );
     t.deepEqual(
       bestMatches,
       {
         v: {
-          length: 200,
+          length: 110,
           variance: 1,
           bestRefAllele: "A"
         },
         w: {
-          length: 250,
+          length: 150,
           variance: 2,
           bestRefAllele: "B"
         }
@@ -136,14 +133,14 @@ test("Compare alleles ambiguously", t => {
   // score when matching pairs of alleles.  This is an example
 
   const referenceAlleles = [
-    { id: "A", muts: [{ t: "S", mut: "A", rI: 1 }] },
-    { id: "B", muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "A", rI: 3 }, { t: "S", mut: "A", rI: 5 }, { t: "S", mut: "A", rI: 7 }] },
-    { id: "C", muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "A", rI: 3 }, { t: "S", mut: "A", rI: 5 }, { t: "S", mut: "A", rI: 7 }, { t: "S", mut: "T", rI: 98 }] }
+    { id: "A", muts: [{ t: "S", mut: "A", rI: 1 }], rR: [1, 120] },
+    { id: "B", muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "A", rI: 3 }, { t: "S", mut: "A", rI: 5 }, { t: "S", mut: "A", rI: 7 }], rR: [1, 150] },
+    { id: "C", muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "A", rI: 3 }, { t: "S", mut: "A", rI: 5 }, { t: "S", mut: "A", rI: 7 }, { t: "S", mut: "T", rI: 98 }], rR: [1, 150] }
   ];
 
   const queryAlleles = [
-    { id: "v", muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "A", rI: 3 }], qR: [1, 200]  },
-    { id: "w", muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "T", rI: 100 }, { t: "S", mut: "T", rI: 102 }], qR: [250, 1] }
+    { id: "v", muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "A", rI: 3 }], rR: [1, 110]  },
+    { id: "w", muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "T", rI: 100 }, { t: "S", mut: "T", rI: 102 }], rR: [1, 200] }
   ];
 
   // You could map the distances between these alleles as follows:
@@ -159,7 +156,7 @@ test("Compare alleles ambiguously", t => {
   // For simplicity and historic reasons we pick the greedy algorithm which will
   // Give the same result in most circumstances.
 
-  _.forEach(_.range(1), () => {
+  _.forEach(_.range(1000), () => {
     // It shouldn't matter which order the alleles or mutations are presented in
     const shuffledReferences = shuffleAlleles(referenceAlleles);
     const shuffledQueries = shuffleAlleles(queryAlleles);
@@ -167,25 +164,22 @@ test("Compare alleles ambiguously", t => {
       ref: summariseAlleles(shuffledReferences),
       query: summariseAlleles(shuffledQueries)
     });
-    const {
-      allelesCompared,
-      differences,
-      bestMatches
-    } = filter._compareAlleles(shuffledQueries, shuffledReferences);
-    t.is(allelesCompared, 2, shuffleSummary);
-    t.is(differences, 6, shuffleSummary);
+    const bestMatches = filter._compareAlleles(
+      shuffledQueries,
+      shuffledReferences
+    );
     t.deepEqual(
       bestMatches,
       {
         v: {
-          length: 200,
+          length: 110,
           variance: 1,
           bestRefAllele: "A"
         },
         w: {
-          length: 250,
-          variance: 2,
-          bestRefAllele: "A"
+          length: 150,
+          variance: 5,
+          bestRefAllele: "B"
         }
       },
       shuffleSummary
@@ -194,49 +188,44 @@ test("Compare alleles ambiguously", t => {
 });
 
 test("Compare query to reference", t => {
-  // TODO: I'm assuming we should ignore missing genes (in the reference or query) when calculating the mutation rate
-
   const queryCoreProfile = {
     commonGene: {
       alleles: [
         {
           id: "commonGeneQuery",
-          muts: [{ t: "S", mut: "A", rI: 1 }],
-          qR: [1, 70]
+          muts: [{ t: "S", mut: "A", rI: 100 }],
+          rR: [51, 150]
         }
-      ],
-      refLength: 100
+      ]
     },
     commonWithDuplicates: {
       alleles: [
         {
           id: "commonWithDuplicatesQuery1",
-          muts: [{ t: "S", mut: "A", rI: 1 }],
-          qR: [901, 1100]
+          muts: [{ t: "S", mut: "A", rI: 11 }],
+          rR: [1, 200]
         },
         {
           id: "commonWithDuplicatesQuery2",
-          muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "A", rI: 3 }, { t: "S", mut: "A", rI: 5 }],
-          qR: [301, 500]
+          muts: [{ t: "S", mut: "A", rI: 11 }, { t: "S", mut: "A", rI: 13 }, { t: "S", mut: "A", rI: 15 }],
+          rR: [10, 190]
         },
         {
           id: "commonWithDuplicatesQuery3",
-          muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "A", rI: 3 }, { t: "S", mut: "A", rI: 5 }, { t: "S", mut: "A", rI: 7 }],
-          qR: [701, 850]
+          muts: [{ t: "S", mut: "A", rI: 11 }, { t: "S", mut: "A", rI: 13 }, { t: "S", mut: "A", rI: 15 }, { t: "S", mut: "A", rI: 17 }],
+          rR: [5, 150]
         }
-      ],
-      refLength: 200
+      ]
     },
     onlyInQuery: {
       alleles: [
         {
           id: "onlyInQuery",
           muts: [{ t: "S", mut: "A", rI: 1 }],
-          qR: [1201, 1450]
+          rR: [1, 300]
         }
       ]
-    },
-    refLength: 300
+    }
   };
 
   const referenceCoreProfile = {
@@ -244,42 +233,46 @@ test("Compare query to reference", t => {
       alleles: [
         {
           id: "onlyInReference",
-          muts: [{ t: "S", mut: "A", rI: 1 }]
+          muts: [{ t: "S", mut: "A", rI: 1 }],
+          rR: [1, 500]
         }
-      ],
-      refLength: 500
+      ]
     },
     commonGene: {
       alleles: [
         {
           id: "commonGeneReference",
-          muts: [{ t: "S", mut: "A", rI: 3 }]
+          muts: [{ t: "S", mut: "A", rI: 103 }],
+          rR: [11, 110]
         }
-      ],
-      refLength: 100
+      ]
     },
     commonWithDuplicates: {
       alleles: [
         {
           id: "commonWithDuplicatesReference1",
-          muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "T", rI: 100 }]
+          muts: [{ t: "S", mut: "A", rI: 11 }, { t: "S", mut: "T", rI: 100 }],
+          rR: [5, 160]
         },
         {
           id: "commonWithDuplicatesReference2",
-          muts: [{ t: "S", mut: "A", rI: 1 }, { t: "S", mut: "A", rI: 3 }, { t: "S", mut: "A", rI: 5 }, { t: "S", mut: "T", rI: 100 }, { t: "S", mut: "T", rI: 102 }]
+          muts: [{ t: "S", mut: "A", rI: 11 }, { t: "S", mut: "A", rI: 13 }, { t: "S", mut: "A", rI: 15 }, { t: "S", mut: "T", rI: 100 }, { t: "S", mut: "T", rI: 102 }],
+          rR: [8, 180]
         }
-      ],
-      refLength: 200
+      ]
     }
   };
 
   const filter = new Filter();
-  const { mutationRate, alleleDifferences } = filter._compare(queryCoreProfile, referenceCoreProfile);
-  t.is(mutationRate, 5 / 500);
+  const { mutationRate, alleleDifferences } = filter._compare(
+    queryCoreProfile,
+    referenceCoreProfile
+  );
+  t.is(mutationRate, 5 / 387);
   t.deepEqual(alleleDifferences, {
     commonGene: {
       commonGeneQuery: {
-        length: 70,
+        length: 60,
         variance: 2,
         bestRefAllele: "commonGeneReference"
       }
@@ -293,18 +286,13 @@ test("Compare query to reference", t => {
       //  B.w
       //  C..
       commonWithDuplicatesQuery1: {
-        length: 200,
+        length: 156,
         variance: 1,
         bestRefAllele: "commonWithDuplicatesReference1"
       },
       commonWithDuplicatesQuery2: {
-        length: 200,
+        length: 171,
         variance: 2,
-        bestRefAllele: "commonWithDuplicatesReference2"
-      },
-      commonWithDuplicatesQuery3: {
-        length: 150,
-        variance: 3,
         bestRefAllele: "commonWithDuplicatesReference2"
       }
     }
