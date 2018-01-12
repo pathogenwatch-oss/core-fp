@@ -105,10 +105,9 @@ async function query(queryPath, skipFp) {
 
     logger("debug")("Adding Filter to Core");
     const { subTypeAssignment: referenceId } = core.fp;
-    const filter = new Filter();
-    const { referenceProfile } = referenceDetails;
-    const genes = _.keys(referenceProfile);
+    const genes = referenceFp.genes();
     const numberGeneFamilies = genes.length;
+    const filter = new Filter();
     const referenceCore = await readReferenceCore(SCHEME, referenceId);
     const { coreProfile: referenceCoreProfile } = referenceCore.coreProfile;
     const bothCoreProfiles = {

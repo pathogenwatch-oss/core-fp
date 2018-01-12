@@ -7,6 +7,17 @@ class Fp {
     this.bounds = bounds;
   }
 
+  genes() {
+    logger("debug")("Getting the genes from Fp");
+    const allGenes = new Set();
+    _.forEach(this.bounds, (geneBounds, __) => {
+      _.forEach(geneBounds, (__, gene) => {
+        allGenes.add(gene);
+      });
+    });
+    return [...allGenes];
+  }
+
   removeNonUniversalGenes() {
     logger("debug")("Removing non-universal genes");
     const geneCounts = {};
