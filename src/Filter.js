@@ -29,6 +29,28 @@ class Filter {
     return variants;
   }
 
+  _overlap(alleleA, alleleB) {
+    function bounds(allele) {
+      const { rR } = allele;
+      return rR[0] < rR[1] ? rR : rR.reverse();
+    }
+    const [aStart, aEnd] = bounds(alleleA);
+    const [bStart, bEnd] = bounds(alleleB);
+    const sorted = [aStart, bStart, aEnd, bEnd].sort((a, b) => a - b);
+    if (bStart === aEnd || aStart === bEnd) return 1;
+    else if (_.isEqual(sorted, [aStart, aEnd, bStart, bEnd])) return 0;
+    else if (_.isEqual(sorted, [bStart, bEnd, aStart, aEnd])) return 0;
+    else if (_.isEqual(sorted, [aStart, bStart, aEnd, bEnd]))
+      return aEnd - bStart + 1;
+    else if (_.isEqual(sorted, [bStart, aStart, bEnd, aEnd]))
+      return bEnd - aStart + 1;
+    else if (_.isEqual(sorted, [aStart, bStart, bEnd, aEnd]))
+      return bEnd - bStart + 1;
+    else if (_.isEqual(sorted, [bStart, aStart, aEnd, bEnd]))
+      return aEnd - aStart + 1;
+    return 0;
+  }
+
   _compareAlleles(query, reference) {
     logger("trace")("Comparing alleles of gene between query and reference");
     const differences = [];

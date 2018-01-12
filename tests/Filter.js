@@ -388,3 +388,66 @@ test("Calculate filtered alleles", t => {
   );
   t.is(mutationRate, 0.01);
 });
+
+test("Overlap", t => {
+  const filter = new Filter();
+  const queryAllele = { rR: [50, 100] };
+  const testCases = [
+    {
+      allele: { rR: [50, 100] },
+      expected: 51
+    },
+    {
+      allele: { rR: [100, 50] },
+      expected: 51
+    },
+    {
+      allele: { rR: [1, 50] },
+      expected: 1
+    },
+    {
+      allele: { rR: [1, 100] },
+      expected: 51
+    },
+    {
+      allele: { rR: [1, 75] },
+      expected: 26
+    },
+    {
+      allele: { rR: [75, 100] },
+      expected: 26
+    },
+    {
+      allele: { rR: [75, 150] },
+      expected: 26
+    },
+    {
+      allele: { rR: [100, 150] },
+      expected: 1
+    },
+    {
+      allele: { rR: [101, 150] },
+      expected: 0
+    },
+    {
+      allele: { rR: [75, 80] },
+      expected: 6
+    },
+    {
+      allele: { rR: [1, 150] },
+      expected: 51
+    }
+  ];
+  _.forEach(testCases, ({ allele, expected }) => {
+    t.is(
+      filter._overlap(queryAllele, allele),
+      expected,
+      JSON.stringify(allele)
+    );
+    t.is(
+      filter._overlap(allele, queryAllele),
+      expected,
+      `Backward: ${JSON.stringify(allele)}`
+    );
+  });
+});
