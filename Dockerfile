@@ -16,6 +16,7 @@ COPY build.sh index.js /usr/local/cgps-core-fp/
 COPY src /usr/local/cgps-core-fp/src/
 COPY schemes /usr/local/cgps-core-fp/schemes/
 
+RUN npm test
 RUN bash build.sh
 
 ENTRYPOINT ["node", "/usr/local/cgps-core-fp/index.js"]
