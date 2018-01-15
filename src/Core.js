@@ -192,6 +192,7 @@ class Core {
     // this version takes 0.2 - 0.3 seconds
     const hitsOverlap = (hitA, hitB) => {
       if (hitA.queryId !== hitB.queryId) return 0;
+      if (hitA.reverse !== hitB.reverse) return 0;
       const [aStart, aEnd] = [hitA.queryStart, hitA.queryEnd].sort(
         (a, b) => a - b
       );

@@ -462,157 +462,169 @@ test("Remove Overlapping hits", t => {
   const testCases = {
     noOverlap: {
       input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo" },
-        { queryStart: 101, queryEnd: 200, queryId: "foo" }
+        { queryStart: 1, queryEnd: 100, queryId: "foo", reverse: false },
+        { queryStart: 101, queryEnd: 200, queryId: "foo", reverse: false }
       ],
       output: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo" },
-        { queryStart: 101, queryEnd: 200, queryId: "foo" }
+        { queryStart: 1, queryEnd: 100, queryId: "foo", reverse: false },
+        { queryStart: 101, queryEnd: 200, queryId: "foo", reverse: false }
       ]
     },
     differentContigs: {
       input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo" },
-        { queryStart: 1, queryEnd: 100, queryId: "bar" }
+        { queryStart: 1, queryEnd: 100, queryId: "foo", reverse: false },
+        { queryStart: 1, queryEnd: 100, queryId: "bar", reverse: false }
       ],
       output: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo" },
-        { queryStart: 1, queryEnd: 100, queryId: "bar" }
+        { queryStart: 1, queryEnd: 100, queryId: "foo", reverse: false },
+        { queryStart: 1, queryEnd: 100, queryId: "bar", reverse: false }
       ]
     },
     littleOverlap: {
       input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo" },
-        { queryStart: 91, queryEnd: 190, queryId: "foo" }
+        { queryStart: 1, queryEnd: 100, queryId: "foo", reverse: false },
+        { queryStart: 91, queryEnd: 190, queryId: "foo", reverse: false }
       ],
       output: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo" },
-        { queryStart: 91, queryEnd: 190, queryId: "foo" }
+        { queryStart: 1, queryEnd: 100, queryId: "foo", reverse: false },
+        { queryStart: 91, queryEnd: 190, queryId: "foo", reverse: false }
       ]
     },
     overlapLeft: {
       // AAAAA    <- Better
       //    BBBBB
       input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90 },
-        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 80 }
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90, reverse: false },
+        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 80, reverse: false }
       ],
-      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90 }]
+      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90, reverse: false }]
     },
     anotherOverlapLeft: {
       // AAAAA
       //    BBBBB <- Better
       input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
-        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90 }
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80, reverse: false },
+        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90, reverse: false }
       ],
-      output: [{ queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90 }]
+      output: [{ queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90, reverse: false }]
     },
     overlapMiddleBottom: {
       // AAAAAAAAA
       //   BBBBB <- Better
       input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
-        { queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 90 }
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80, reverse: false },
+        { queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 90, reverse: false }
       ],
-      output: [{ queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 90 }]
+      output: [{ queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 90, reverse: false }]
     },
     overlapMiddleTop: {
       // AAAAAAAAA <- Better
       //   BBBBB
       input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90 },
-        { queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 80 }
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90, reverse: false },
+        { queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 80, reverse: false }
       ],
-      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90 }]
+      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90, reverse: false }]
     },
     moreMatches: {
       //   AAAAA
       // BBBBBBB <- Better
       input: [
-        { queryStart: 41, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 60 },
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100 }
+        { queryStart: 41, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 60, reverse: false },
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, reverse: false }
       ],
-      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100 }]
+      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, reverse: false }]
     },
     hitName: {
       // AAAAAAA <- Better
       //   BBBBBBB
       input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" },
-        { queryStart: 41, queryEnd: 140, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "B" }
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A", reverse: false },
+        { queryStart: 41, queryEnd: 140, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "B", reverse: false }
       ],
-      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" }]
+      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A", reverse: false }]
     },
     startFirst: {
       // AAAAAAA <- Better
       //   BBBBBBB
       input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" },
-        { queryStart: 41, queryEnd: 140, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" }
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A", reverse: false },
+        { queryStart: 41, queryEnd: 140, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A", reverse: false }
       ],
-      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" }]
+      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A", reverse: false }]
     },
     endFirst: {
       // I'm not sure if this can actually happen...
       // AAAAA
       // BBBB  <- Better
       input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 50, matchingBases: 60, hitId: "A" },
-        { queryStart: 1, queryEnd: 80, queryId: "foo", pIdent: 50, matchingBases: 60, hitId: "A" }
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 50, matchingBases: 60, hitId: "A", reverse: false },
+        { queryStart: 1, queryEnd: 80, queryId: "foo", pIdent: 50, matchingBases: 60, hitId: "A", reverse: false }
       ],
-      output: [{ queryStart: 1, queryEnd: 80, queryId: "foo", pIdent: 50, matchingBases: 60, hitId: "A" }]
+      output: [{ queryStart: 1, queryEnd: 80, queryId: "foo", pIdent: 50, matchingBases: 60, hitId: "A", reverse: false }]
     },
     identical: {
       // AAAAA
       // BBBBB <- Better
       input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" },
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" }
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A", reverse: false },
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A", reverse: false }
       ],
-      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" }]
+      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A", reverse: false }]
     },
     threeHits: {
       input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
-        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90 },
-        { queryStart: 151, queryEnd: 250, queryId: "foo", pIdent: 85 }
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80, reverse: false },
+        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90, reverse: false },
+        { queryStart: 151, queryEnd: 250, queryId: "foo", pIdent: 85, reverse: false }
       ],
       output: [
-        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90 },
-        { queryStart: 151, queryEnd: 250, queryId: "foo", pIdent: 85 }
+        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90, reverse: false },
+        { queryStart: 151, queryEnd: 250, queryId: "foo", pIdent: 85, reverse: false }
       ]
     },
     middleOfThreeHits: {
       input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
-        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90 },
-        { queryStart: 120, queryEnd: 220, queryId: "foo", pIdent: 85 }
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80, reverse: false },
+        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90, reverse: false },
+        { queryStart: 120, queryEnd: 220, queryId: "foo", pIdent: 85, reverse: false }
       ],
-      output: [{ queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90 }]
+      output: [{ queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90, reverse: false }]
     },
     lastOfThreeHits: {
       input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
-        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90 },
-        { queryStart: 120, queryEnd: 220, queryId: "foo", pIdent: 95 }
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80, reverse: false },
+        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90, reverse: false },
+        { queryStart: 120, queryEnd: 220, queryId: "foo", pIdent: 95, reverse: false }
       ],
       // It's not obvious whether we should keep the first hit; my suggestion is
       // that this scenario is unlikely and this is the simplest solution to
       // implement.
-      output: [{ queryStart: 120, queryEnd: 220, queryId: "foo", pIdent: 95 }]
+      output: [{ queryStart: 120, queryEnd: 220, queryId: "foo", pIdent: 95, reverse: false }]
     },
     fourHits: {
       input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
-        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90 },
-        { queryStart: 120, queryEnd: 220, queryId: "foo", pIdent: 85 },
-        { queryStart: 180, queryEnd: 280, queryId: "foo", pIdent: 95 }
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80, reverse: false },
+        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90, reverse: false },
+        { queryStart: 120, queryEnd: 220, queryId: "foo", pIdent: 85, reverse: false },
+        { queryStart: 180, queryEnd: 280, queryId: "foo", pIdent: 95, reverse: false }
       ],
       // This is very unlikely but this makes some sort of sense.
       output: [
-        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90 },
-        { queryStart: 180, queryEnd: 280, queryId: "foo", pIdent: 95 }
+        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90, reverse: false },
+        { queryStart: 180, queryEnd: 280, queryId: "foo", pIdent: 95, reverse: false }
+      ]
+    },
+    differentStrands: {
+      // AAAAAAAAA
+      //   BBBBB
+      input: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80, reverse: false },
+        { queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 90, reverse: true }
+      ],
+      output: [
+        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80, reverse: false },
+        { queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 90, reverse: true }
       ]
     }
   };
