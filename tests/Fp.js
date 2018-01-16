@@ -316,6 +316,44 @@ test("Add more cores", t => {
   t.deepEqual(fp.substitutions, expected);
 });
 
+test("Pick least variant allele", t => {
+  const fp = new Fp({}, {});
+  const testCases = {
+    simple: {
+      alleles: [
+        { id: "abc", muts: [], rR: [1, 100] },
+        { id: "def", muts: [{ t: "S" }], rR: [1, 100] }
+      ],
+      expected: { id: "abc", muts: [], rR: [1, 100] }
+    },
+    fewerSubsitutions: {
+      alleles: [
+        { id: "abc", muts: [{ t: "S" }, { t: "S" }], rR: [1, 100] },
+        { id: "def", muts: [{ t: "S" }, { t: "I" }, { t: "I" }], rR: [1, 100] }
+      ],
+      expected: { id: "def", muts: [{ t: "S" }, { t: "I" }, { t: "I" }], rR: [1, 100] }
+    },
+    longer: {
+      alleles: [
+        { id: "abc", muts: [{ t: "S" }], rR: [1, 90] },
+        { id: "def", muts: [{ t: "S" }], rR: [1, 100] }
+      ],
+      expected: { id: "def", muts: [{ t: "S" }], rR: [1, 100] }
+    },
+    lowerId: {
+      alleles: [
+        { id: "def", muts: [{ t: "S" }], rR: [11, 100] },
+        { id: "abc", muts: [{ t: "S" }], rR: [1, 90] }
+      ],
+      expected: { id: "abc", muts: [{ t: "S" }], rR: [1, 90] }
+    }
+  };
+  _.forEach(testCases, ({ alleles, expected }, name) => {
+    const actual = fp._pickLeastVariantAllele(alleles);
+    t.deepEqual(actual, expected, name);
+  });
+});
+
 test("Score", t => {
   const referenceFp = new Fp(
     {

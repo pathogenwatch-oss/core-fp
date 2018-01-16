@@ -68,6 +68,42 @@ class Fp {
     return size;
   }
 
+  _pickLeastVariantAllele(alleles) {
+    // Picks the allele by:
+    // * fewest substitution mutations
+    // * longest
+    // * lowest alphabetical id
+
+    let leastVariant = null;
+    let fewestSubstitutions = null;
+
+    function length(allele) {
+      const { rR: [start, end] } = allele;
+      return Math.abs(start - end) + 1;
+    }
+
+    _.forEach(alleles || [], allele => {
+      const mutations = allele.muts || [];
+      const substitutions = _.filter(mutations, ({ t }) => t === "S");
+      if (fewestSubstitutions === null) {
+        fewestSubstitutions = substitutions;
+        leastVariant = allele;
+      } else if (substitutions.length < fewestSubstitutions.length) {
+        fewestSubstitutions = substitutions;
+        leastVariant = allele;
+      } else if (substitutions.length === fewestSubstitutions.length) {
+        if (length(allele) > length(leastVariant)) {
+          fewestSubstitutions = substitutions;
+          leastVariant = allele;
+        } else if (allele.id < leastVariant.id) {
+          fewestSubstitutions = substitutions;
+          leastVariant = allele;
+        }
+      }
+    });
+    return leastVariant;
+  }
+
   addCore(name, coreProfile) {
     logger("debug")(`Reformatting substitution mutations for ${name}`);
     // This function is used to index the references and the query
@@ -78,24 +114,14 @@ class Fp {
       // If an gene familiy has multiple hits in a reference or query
       // we discard all but the one with fewest substitution
       // mutations (ignoring how long those substitutions are)
-      let fewestSubstitutions = null;
-      _.forEach(alleles || [], allele => {
-        const { rR } = allele;
-        const mutations = allele.muts || [];
-        const substitutions = _.filter(mutations, ({ t }) => t === "S");
-        if (fewestSubstitutions === null) {
-          fewestSubstitutions = substitutions;
-          bounds[gene] = rR;
-        } else if (substitutions.length < fewestSubstitutions.length) {
-          fewestSubstitutions = substitutions;
-          // We record the range of the gene family matched so that
-          // we can ignore mutations in the reference outside this
-          // range during fingerprinting
-          bounds[gene] = rR;
-        }
-      });
-      if (fewestSubstitutions !== null) {
-        _.forEach(fewestSubstitutions, ({ t, mut, rI }) => {
+      const bestAllele = this._pickLeastVariantAllele(alleles);
+      if (bestAllele !== null) {
+        // We record the range of the gene family matched so that
+        // we can ignore mutations in the reference outside this
+        // range during fingerprinting
+        bounds[gene] = bestAllele.rR;
+        const mutations = bestAllele.muts || [];
+        _.forEach(mutations, ({ t, mut, rI }) => {
           if (t !== "S") return;
           if (!_.has(this.substitutions, [gene, rI, mut]))
             _.setWith(this.substitutions, [gene, rI, mut], [], Object);
