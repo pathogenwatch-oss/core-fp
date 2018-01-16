@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -eu -o pipefail
+export DEBUG=${DEBUG:-"*,-trace*"}
 
 for d in $(find ./schemes -mindepth 1 -maxdepth 1 -type d); do
   scheme_dir=$(cd $d && pwd)
