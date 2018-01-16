@@ -3,16 +3,17 @@ const logger = require("debug");
 const cdf = require("distributions-poisson-cdf");
 
 class Filter {
-  _compareMutations(first, second) {
+  _compareMutations(first, second, overlap) {
     logger("trace")(
       "Measuring the number of different substitutions between alleles"
     );
+    const [start, end] = overlap;
     const firstPositions = _(first)
-      .filter(({ t }) => t === "S")
+      .filter(({ t, rI }) => t === "S" && rI >= start && rI <= end)
       .keyBy("rI")
       .value();
     const secondPositions = _(second)
-      .filter(({ t }) => t === "S")
+      .filter(({ t, rI }) => t === "S" && rI >= start && rI <= end)
       .keyBy("rI")
       .value();
     const mutationPositons = new Set([
@@ -37,18 +38,20 @@ class Filter {
     const [aStart, aEnd] = bounds(alleleA);
     const [bStart, bEnd] = bounds(alleleB);
     const sorted = [aStart, bStart, aEnd, bEnd].sort((a, b) => a - b);
-    if (bStart === aEnd || aStart === bEnd) return 1;
-    else if (_.isEqual(sorted, [aStart, aEnd, bStart, bEnd])) return 0;
-    else if (_.isEqual(sorted, [bStart, bEnd, aStart, aEnd])) return 0;
+
+    if (bStart === aEnd) return [aEnd, bStart];
+    else if (aStart === bEnd) return [bEnd, aStart];
+    else if (_.isEqual(sorted, [aStart, aEnd, bStart, bEnd])) return null;
+    else if (_.isEqual(sorted, [bStart, bEnd, aStart, aEnd])) return null;
     else if (_.isEqual(sorted, [aStart, bStart, aEnd, bEnd]))
-      return aEnd - bStart + 1;
+      return sorted.slice(1, 3);
     else if (_.isEqual(sorted, [bStart, aStart, bEnd, aEnd]))
-      return bEnd - aStart + 1;
+      return sorted.slice(1, 3);
     else if (_.isEqual(sorted, [aStart, bStart, bEnd, aEnd]))
-      return bEnd - bStart + 1;
+      return sorted.slice(1, 3);
     else if (_.isEqual(sorted, [bStart, aStart, aEnd, bEnd]))
-      return aEnd - aStart + 1;
-    return 0;
+      return sorted.slice(1, 3);
+    return null;
   }
 
   _compareAlleles(query, reference) {
@@ -57,11 +60,14 @@ class Filter {
     _.forEach(query, queryAllele => {
       _.forEach(reference, referenceAllele => {
         const { id: queryId, muts: queryMutations } = queryAllele;
-        const length = this._overlap(queryAllele, referenceAllele);
         const { id: referenceId, muts: referenceMutations } = referenceAllele;
+        const overlap = this._overlap(queryAllele, referenceAllele);
+        const [start, end] = overlap;
+        const length = end - start + 1;
         const difference = this._compareMutations(
           queryMutations,
-          referenceMutations
+          referenceMutations,
+          overlap
         );
         differences.push([queryId, referenceId, difference, length]);
       });

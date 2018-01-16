@@ -5,23 +5,25 @@ const sinon = require("sinon");
 const { Filter } = require("../src/Filter");
 
 test("Compare alleles", t => {
-  // TODO: I assumed that bounds don't matter.
   const filter = new Filter();
 
   const testCases = {
     identical: {
       first: [{ t: "S", mut: "A", rI: 4 }],
       second: [{ t: "S", mut: "A", rI: 4 }],
+      overlap: [1, 10],
       expected: 0
     },
     notInFirst: {
       first: [],
       second: [{ t: "S", mut: "A", rI: 4 }],
+      overlap: [1, 10],
       expected: 1
     },
     notASubstitution: {
       first: [{ t: "S", mut: "A", rI: 4 }],
       second: [{ t: "I", mut: "A", rI: 4 }],
+      overlap: [1, 10],
       expected: 1
     },
     many: {
@@ -37,24 +39,43 @@ test("Compare alleles", t => {
         { t: "S", mut: "T", rI: 16 },
         { t: "S", mut: "A", rI: 12 }
       ],
+      overlap: [1, 20],
       expected: 4
     },
     deletion: {
       first: [{ t: "S", mut: "A", rI: 4 }, { t: "D", mut: "-", rI: 4 }],
       second: [{ t: "D", mut: "-", rI: 4 }, { t: "S", mut: "A", rI: 4 }],
+      overlap: [1, 10],
       expected: 0
     },
     anotherDeletion: {
       first: [{ t: "D", mut: "-", rI: 4 }],
       second: [{ t: "D", mut: "-", rI: 4 }, { t: "S", mut: "A", rI: 4 }],
+      overlap: [1, 10],
       expected: 1
+    },
+    partialHits: {
+      first: [
+        { t: "S", mut: "A", rI: 16 }, // Out of bounds
+        { t: "S", mut: "A", rI: 4 }, // Out of bounds
+        { t: "I", mut: "A", rI: 12 }, // Insertion
+        { t: "S", mut: "A", rI: 8 } // Same
+      ],
+      second: [
+        { t: "S", mut: "A", rI: 8 }, // Same
+        { t: "S", mut: "A", rI: 5 }, // VARIANT
+        { t: "S", mut: "T", rI: 16 }, // Out of bounds
+        { t: "S", mut: "A", rI: 12 } // VARIANT
+      ],
+      overlap: [5, 15],
+      expected: 2
     }
   };
 
-  _.forEach(testCases, ({ first, second, expected }, testName) => {
-    t.is(filter._compareMutations(first, second), expected, testName);
+  _.forEach(testCases, ({ first, second, overlap, expected }, testName) => {
+    t.is(filter._compareMutations(first, second, overlap), expected, testName);
     t.is(
-      filter._compareMutations(second, first),
+      filter._compareMutations(second, first, overlap),
       expected,
       `${testName} reversed`
     );
@@ -383,56 +404,60 @@ test("Overlap", t => {
   const testCases = [
     {
       allele: { rR: [50, 100] },
-      expected: 51
+      expected: [50, 100]
     },
     {
       allele: { rR: [100, 50] },
-      expected: 51
+      expected: [50, 100]
     },
     {
       allele: { rR: [1, 50] },
-      expected: 1
+      expected: [50, 50]
     },
     {
       allele: { rR: [1, 100] },
-      expected: 51
+      expected: [50, 100]
     },
     {
       allele: { rR: [1, 75] },
-      expected: 26
+      expected: [50, 75]
     },
     {
       allele: { rR: [75, 100] },
-      expected: 26
+      expected: [75, 100]
     },
     {
       allele: { rR: [75, 150] },
-      expected: 26
+      expected: [75, 100]
+    },
+    {
+      allele: { rR: [150, 75] },
+      expected: [75, 100]
     },
     {
       allele: { rR: [100, 150] },
-      expected: 1
+      expected: [100, 100]
     },
     {
       allele: { rR: [101, 150] },
-      expected: 0
+      expected: null
     },
     {
       allele: { rR: [75, 80] },
-      expected: 6
+      expected: [75, 80]
     },
     {
       allele: { rR: [1, 150] },
-      expected: 51
+      expected: [50, 100]
     }
   ];
   _.forEach(testCases, ({ allele, expected }) => {
-    t.is(
+    t.deepEqual(
       filter._overlap(queryAllele, allele),
       expected,
       JSON.stringify(allele)
     );
-    t.is(
+    t.deepEqual(
       filter._overlap(allele, queryAllele),
       expected,
       `Backward: ${JSON.stringify(allele)}`
