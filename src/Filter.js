@@ -144,8 +144,6 @@ class Filter {
         variance: difference,
         bestRefAllele: referenceId
       };
-      pairedQueries.add(queryId);
-      pairedReferences.add(referenceId);
     });
     return bestMatches;
   }
