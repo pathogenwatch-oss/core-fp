@@ -116,7 +116,7 @@ test("Compare alleles unambiguously", t => {
   //  B w
   //  C
 
-  _.forEach(_.range(1000), () => {
+  _.forEach(_.range(100), () => {
     // It shouldn't matter which order the alleles or mutations are presented in
     const shuffledReferences = shuffleAlleles(referenceAlleles);
     const shuffledQueries = shuffleAlleles(queryAlleles);
@@ -150,7 +150,7 @@ test("Compare alleles unambiguously", t => {
 test("Compare alleles ambiguously", t => {
   const filter = new Filter();
 
-  // The greedy algorithm we're using doesn't always find the lowest possible
+  // A greedy algorithm doesn't always find the lowest possible
   // score when matching pairs of alleles.  This is an example
 
   const referenceAlleles = [
@@ -174,10 +174,8 @@ test("Compare alleles ambiguously", t => {
 
   // The greedy algorithm scores (A -> v = 1) + (B -> w = 5) = 6
   // A better algorithm scores (A -> w = 2) + (B -> v = 2) = 4
-  // For simplicity and historic reasons we pick the greedy algorithm which will
-  // Give the same result in most circumstances.
 
-  _.forEach(_.range(1000), () => {
+  _.forEach(_.range(100), () => {
     // It shouldn't matter which order the alleles or mutations are presented in
     const shuffledReferences = shuffleAlleles(referenceAlleles);
     const shuffledQueries = shuffleAlleles(queryAlleles);
@@ -194,18 +192,27 @@ test("Compare alleles ambiguously", t => {
       {
         v: {
           length: 110,
-          variance: 1,
-          bestRefAllele: "A"
+          variance: 2,
+          bestRefAllele: "B"
         },
         w: {
-          length: 150,
-          variance: 5,
-          bestRefAllele: "B"
+          length: 120,
+          variance: 2,
+          bestRefAllele: "A"
         }
       },
       shuffleSummary
     );
   });
+});
+
+test("Permutations", t => {
+  const filter = new Filter();
+  t.is(filter._permutations([1, 2, 3], ["a", "b"]).length, 6);
+  t.is(filter._permutations([1, 2, 3], ["a", "b", "c"]).length, 6);
+  t.is(filter._permutations([1, 2, 3, 4], ["a", "b"]).length, 12);
+  t.is(filter._permutations([1, 2], ["a", "b", "c", "d"]).length, 12);
+  t.is(filter._permutations([1, 2, 3, 4, 5], ["a", "b", "c"]).length, 60);
 });
 
 test("Compare query to reference", t => {
