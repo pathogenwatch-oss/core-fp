@@ -104,7 +104,7 @@ test("Fingerprint Size", t => {
   t.is(fp.fingerprintSize(), 3);
 });
 
-test("Add best reference", t => {
+test("Skip haplotypes", t => {
   const fp = new Fp();
   const core = {
     geneA: {
@@ -145,18 +145,32 @@ test("Add best reference", t => {
           ]
         }
       ]
+    },
+    geneB: {
+      alleles: [
+        {
+          rR: [1, 10],
+          muts: [
+            {
+              t: "S",
+              mut: "A",
+              rI: 10
+            }
+          ]
+        }
+      ]
     }
   };
   const expectedSubstitution = {
-    geneA: {
-      11: {
-        TTTT: ["foo"]
+    geneB: {
+      10: {
+        A: ["foo"]
       }
     }
   };
   const expectedBounds = {
     foo: {
-      geneA: [11, 20]
+      geneB: [1, 10]
     }
   };
   fp.addCore("foo", core);
@@ -314,44 +328,6 @@ test("Add more cores", t => {
     }
   };
   t.deepEqual(fp.substitutions, expected);
-});
-
-test("Pick least variant allele", t => {
-  const fp = new Fp({}, {});
-  const testCases = {
-    simple: {
-      alleles: [
-        { id: "abc", muts: [], rR: [1, 100] },
-        { id: "def", muts: [{ t: "S" }], rR: [1, 100] }
-      ],
-      expected: { id: "abc", muts: [], rR: [1, 100] }
-    },
-    fewerSubsitutions: {
-      alleles: [
-        { id: "abc", muts: [{ t: "S" }, { t: "S" }], rR: [1, 100] },
-        { id: "def", muts: [{ t: "S" }, { t: "I" }, { t: "I" }], rR: [1, 100] }
-      ],
-      expected: { id: "def", muts: [{ t: "S" }, { t: "I" }, { t: "I" }], rR: [1, 100] }
-    },
-    longer: {
-      alleles: [
-        { id: "abc", muts: [{ t: "S" }], rR: [1, 90] },
-        { id: "def", muts: [{ t: "S" }], rR: [1, 100] }
-      ],
-      expected: { id: "def", muts: [{ t: "S" }], rR: [1, 100] }
-    },
-    lowerId: {
-      alleles: [
-        { id: "def", muts: [{ t: "S" }], rR: [11, 100] },
-        { id: "abc", muts: [{ t: "S" }], rR: [1, 90] }
-      ],
-      expected: { id: "abc", muts: [{ t: "S" }], rR: [1, 90] }
-    }
-  };
-  _.forEach(testCases, ({ alleles, expected }, name) => {
-    const actual = fp._pickLeastVariantAllele(alleles);
-    t.deepEqual(actual, expected, name);
-  });
 });
 
 test("Score", t => {

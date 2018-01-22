@@ -20,6 +20,9 @@ class Fp {
 
   removeNonUniversalGenes() {
     logger("debug")("Removing non-universal genes");
+    // This is used when indexing the references.  NB that it will,
+    // in effect, also remove all traces of the haplotypes because
+    // they are not added to the bounds properties.
     const geneCounts = {};
     _.forEach(this.bounds, (geneBounds, __) => {
       _.forEach(geneBounds, (__, gene) => {
@@ -68,42 +71,6 @@ class Fp {
     return size;
   }
 
-  _pickLeastVariantAllele(alleles) {
-    // Picks the allele by:
-    // * fewest substitution mutations
-    // * longest
-    // * lowest alphabetical id
-
-    let leastVariant = null;
-    let fewestSubstitutions = null;
-
-    function length(allele) {
-      const { rR: [start, end] } = allele;
-      return Math.abs(start - end) + 1;
-    }
-
-    _.forEach(alleles || [], allele => {
-      const mutations = allele.muts || [];
-      const substitutions = _.filter(mutations, ({ t }) => t === "S");
-      if (fewestSubstitutions === null) {
-        fewestSubstitutions = substitutions;
-        leastVariant = allele;
-      } else if (substitutions.length < fewestSubstitutions.length) {
-        fewestSubstitutions = substitutions;
-        leastVariant = allele;
-      } else if (substitutions.length === fewestSubstitutions.length) {
-        if (length(allele) > length(leastVariant)) {
-          fewestSubstitutions = substitutions;
-          leastVariant = allele;
-        } else if (allele.id < leastVariant.id) {
-          fewestSubstitutions = substitutions;
-          leastVariant = allele;
-        }
-      }
-    });
-    return leastVariant;
-  }
-
   addCore(name, coreProfile) {
     logger("debug")(`Reformatting substitution mutations for ${name}`);
     // This function is used to index the references and the query
@@ -112,22 +79,21 @@ class Fp {
     const bounds = {};
     _.forEach(coreProfile, ({ alleles }, gene) => {
       // If an gene familiy has multiple hits in a reference or query
-      // we discard all but the one with fewest substitution
-      // mutations (ignoring how long those substitutions are)
-      const bestAllele = this._pickLeastVariantAllele(alleles);
-      if (bestAllele !== null) {
-        // We record the range of the gene family matched so that
-        // we can ignore mutations in the reference outside this
-        // range during fingerprinting
-        bounds[gene] = bestAllele.rR;
-        const mutations = bestAllele.muts || [];
-        _.forEach(mutations, ({ t, mut, rI }) => {
-          if (t !== "S") return;
-          if (!_.has(this.substitutions, [gene, rI, mut]))
-            _.setWith(this.substitutions, [gene, rI, mut], [], Object);
-          this.substitutions[gene][rI][mut].push(name);
-        });
-      }
+      // we discard that family
+      if (alleles.length !== 1) return;
+
+      const allele = alleles[0];
+      // We record the range of the gene family matched so that
+      // we can ignore mutations in the reference outside this
+      // range during fingerprinting
+      bounds[gene] = allele.rR;
+      const mutations = allele.muts || [];
+      _.forEach(mutations, ({ t, mut, rI }) => {
+        if (t !== "S") return;
+        if (!_.has(this.substitutions, [gene, rI, mut]))
+          _.setWith(this.substitutions, [gene, rI, mut], [], Object);
+        this.substitutions[gene][rI][mut].push(name);
+      });
     });
     this.bounds[name] = bounds;
   }
