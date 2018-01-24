@@ -164,8 +164,8 @@ async function debug(queryPath) {
   const hits = await blastParser.parse(blastOutput);
   const coreAnalyser = new Core(config);
   _.forEach(hits, hit => {
-    this.addQueryHash(hit);
-    this.addMutations(hit);
+    coreAnalyser.addQueryHash(hit);
+    coreAnalyser.addMutations(hit);
   });
   coreAnalyser.addFilters(hits);
   return { scheme: SCHEME, hits };
