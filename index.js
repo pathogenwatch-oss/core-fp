@@ -23,7 +23,7 @@ const SCHEME_PROFILE_PATH = path.join(__dirname, "databases", String(SCHEME), "f
 const argv = {
   command: process.argv[2]
 };
-if (argv.command === "query") {
+if (argv.command === "query" || argv.command === "debug") {
   argv.queryPath = process.argv[3];
 } else if (argv.command === "build") {
   argv.references = process.argv.slice(3);
@@ -146,10 +146,39 @@ async function build(references) {
   return fp.dump();
 }
 
+async function debug(queryPath) {
+  logger("debug")(`Debugging ${queryPath} core with ${SCHEME}`);
+  const config = await readConfig(SCHEME);
+  const { blastConfiguration } = config;
+  const blastDb = path.join(__dirname, "databases", String(SCHEME), "core.db");
+  const blastInputStream = fs.createReadStream(queryPath);
+  const blastOutput = await runBlast(
+    blastDb,
+    blastConfiguration,
+    blastInputStream
+  );
+  const blastParser = new BlastParser(config);
+  const hits = await blastParser.parse(blastOutput);
+  const coreAnalyser = new Core(config);
+  _.forEach(hits, hit => {
+    this.addQueryHash(hit);
+    this.addMutations(hit);
+  });
+  coreAnalyser.addFilters(hits);
+  return { scheme: SCHEME, hits };
+}
+
 if (require.main === module) {
   if (argv.command === "query") {
     const { queryPath } = argv;
     query(queryPath, RUN_FP)
+      .then(JSON.stringify)
+      .then(console.log)
+      .then(() => logger("debug")("Finished"))
+      .catch(logger("error"));
+  } else if (argv.command === "debug") {
+    const { queryPath } = argv;
+    debug(queryPath)
       .then(JSON.stringify)
       .then(console.log)
       .then(() => logger("debug")("Finished"))

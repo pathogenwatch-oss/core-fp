@@ -214,41 +214,53 @@ class Core {
         return aEnd - aStart + 1;
       throw new Error("Couldn't calculate overlap between hits");
     };
-    const overlaped = new Set();
     _.forEach(_.groupBy(hits, "queryId"), contigHits => {
-      _.forEach(contigHits, (hitA, idx) => {
-        _.forEach(contigHits.slice(idx + 1), hitB => {
+      const unfilteredHits = _.filter(contigHits, hit => !hit.filtered);
+      _.forEach(unfilteredHits, (hitA, idx) => {
+        _.forEach(unfilteredHits.slice(idx + 1), hitB => {
           const overlap = hitsOverlap(hitA, hitB);
           if (overlap > 40) {
+            let removed = null;
+            let removedBy = null;
+            let removedBecause = null;
             if (hitA.pIdent !== hitB.pIdent) {
-              overlaped.add(hitA.pIdent < hitB.pIdent ? hitA : hitB);
+              [removed, removedBy] =
+                hitA.pIdent < hitB.pIdent ? [hitA, hitB] : [hitB, hitA];
+              removedBecause = "pIdent";
             } else if (hitA.matchingBases !== hitB.matchingBases) {
-              overlaped.add(
-                hitA.matchingBases < hitB.matchingBases ? hitA : hitB
-              );
+              [removed, removedBy] =
+                hitA.matchingBases < hitB.matchingBases
+                  ? [hitA, hitB]
+                  : [hitB, hitA];
+              removedBecause = "matchingBases";
             } else if (hitA.hitId !== hitB.hitId) {
               // Keep the alphanumerically smaller
-              overlaped.add(hitA.hitId > hitB.hitId ? hitA : hitB);
+              [removed, removedBy] =
+                hitA.hitId > hitB.hitId ? [hitA, hitB] : [hitB, hitA];
+              removedBecause = "hitId";
             } else if (hitA.queryStart !== hitB.queryStart) {
               // Keep the one which starts first
-              overlaped.add(hitA.queryStart > hitB.queryStart ? hitA : hitB);
+              [removed, removedBy] =
+                hitA.queryStart > hitB.queryStart ? [hitA, hitB] : [hitB, hitA];
+              removedBecause = "queryStart";
             } else if (hitA.queryEnd !== hitB.queryEnd) {
               // Keep the one which ends first
-              overlaped.add(hitA.queryEnd > hitB.queryEnd ? hitA : hitB);
+              [removed, removedBy] =
+                hitA.queryEnd > hitB.queryEnd ? [hitA, hitB] : [hitB, hitA];
+              removedBecause = "queryEnd";
             } else {
               // Keep the first one in the list (they're essentially duplicates)
-              overlaped.add(hitB);
+              [removed, removedBy, removedBecause] = [hitB, hitA, "second"];
             }
+            removed.filtered = {
+              type: "overlap",
+              by: removedBy.queryHash,
+              overlap,
+              because: removedBecause
+            };
           }
         });
       });
-    });
-    _.remove(hits, hit => {
-      if (overlaped.has(hit)) {
-        logger("trace:removeHit:overlap")(hit);
-        return true;
-      }
-      return false;
     });
   }
 
@@ -259,13 +271,13 @@ class Core {
       geneLengths,
       length => length * minMatchCoveragePercent
     );
-    _.remove(hits, hit => {
+    _.forEach(hits, hit => {
+      if (hit.filtered) return;
       const { hitId, hitStart, hitEnd } = hit;
       if (Math.abs(hitStart - hitEnd) + 1 < (minMatchCoverage[hitId] || 0)) {
         logger("trace:removeHit:short")(hit);
-        return true;
+        hit.filtered = { type: "shortHit", minMatchCoverage: minMatchCoverage[hitId] };
       }
-      return false;
     });
   }
 
@@ -273,21 +285,22 @@ class Core {
     // If a gene family has a hit which matches the whole gene, use that and discard any partial matches
     const isCompleteMatch = ({ hitId, hitStart, hitEnd }) =>
       Math.abs(hitStart - hitEnd) + 1 === this.config.geneLengths[hitId];
-    const complete = new Set();
+    const complete = {};
     _.forEach(hits, hit => {
+      if (hit.filted) return;
       if (isCompleteMatch(hit)) {
-        complete.add(hit.hitId);
+        complete[hit.hitId] = hit.queryHash || "Unknown";
         hit.full = true;
       } else {
         hit.full = false;
       }
     });
-    _.remove(hits, hit => {
-      if (complete.has(hit.hitId) && !hit.full) {
+    _.forEach(hits, hit => {
+      if (hit.filtered) return;
+      if (complete[hit.hitId] && !hit.full) {
         logger("trace:removeHit:partial")(hit);
-        return true;
+        hit.filtered = { type: "partialHit", by: complete[hit.hitId] };
       }
-      return false;
     });
   }
 
@@ -354,12 +367,22 @@ class Core {
     return output;
   }
 
-  getCore(hits, summaryData) {
-    logger("debug")("Calculating the core profile");
-    const { assemblyId, speciesId, queryLength } = summaryData;
+  _removeFiltered(hits) {
+    _.remove(hits, hit => hit.filtered);
+  }
+
+  addFilters(hits) {
+    logger("debug")("Filtering the core hits");
     this._removePartialHits(hits);
     this._removeShortHits(hits);
     this._removeOverlappingHits(hits);
+  }
+
+  getCore(hits, summaryData) {
+    logger("debug")("Calculating the core profile");
+    const { assemblyId, speciesId, queryLength } = summaryData;
+    this.addFilters(hits);
+    this._removeFiltered(hits);
     _.forEach(hits, hit => {
       this.addQueryHash(hit);
       this.addMutations(hit);

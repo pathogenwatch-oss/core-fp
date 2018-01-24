@@ -631,6 +631,7 @@ test("Remove Overlapping hits", t => {
   _.forEach(testCases, ({ input, output: expected }, testName) => {
     coreAnalyser._removeOverlappingHits(input);
     const actual = input;
+    coreAnalyser._removeFiltered(actual);
     t.deepEqual(actual, expected, testName);
   });
 });
@@ -665,6 +666,7 @@ test("Remove short hits", t => {
   _.forEach(testCases, ({ config, hits, expected }) => {
     const coreAnalyser = new Core(config);
     coreAnalyser._removeShortHits(hits);
+    coreAnalyser._removeFiltered(hits);
     t.deepEqual(hits, expected);
   });
 });
@@ -720,6 +722,7 @@ test("Remove partial matches", t => {
   _.forEach(testCases, ({ config, hits, expected }, testName) => {
     const coreAnalyser = new Core(config);
     coreAnalyser._removePartialHits(hits);
+    coreAnalyser._removeFiltered(hits);
     t.deepEqual(hits, expected, testName);
   });
 });
@@ -769,8 +772,8 @@ test("Get Core", t => {
     { hitId: "geneC", queryStart: 7001, queryEnd: 7070, hitStart: 1, hitEnd: 70, reverse: false } // Dropped
   ];
   const coreAnalyser = new Core(config);
-  coreAnalyser.addMutations = sinon.stub().returns([]);
-  coreAnalyser.addQueryHash = sinon.stub().returns([]);
+  coreAnalyser.addMutations = sinon.stub();
+  coreAnalyser.addQueryHash = sinon.stub();
   coreAnalyser._removeOverlappingHits = sinon.spy();
   const summaryData = {
     assemblyId: "query",
