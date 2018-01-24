@@ -18,7 +18,10 @@ process.on("unhandledRejection", reason => {
 });
 
 const SCHEME = Number(process.env.WGSA_ORGANISM_TAXID);
-const SCHEME_PROFILE_PATH = path.join(__dirname, "databases", String(SCHEME), "fp.json");
+const CORE_DB_ROOT =
+  process.env.CORE_DB_ROOT || path.join(__dirname, "databases");
+const SCHEME_PROFILE_PATH = path.join(CORE_DB_ROOT, String(SCHEME), "fp.json");
+const SCHEME_BLAST_DB = path.join(CORE_DB_ROOT, String(SCHEME), "core.db");
 
 const argv = {
   command: process.argv[2]
@@ -74,7 +77,7 @@ async function query(queryPath, skipFp) {
   const whenReferenceDetails = skipFp ? Promise.resolve(null) : readFpProfile();
   const config = await readConfig(SCHEME);
   const { blastConfiguration } = config;
-  const blastDb = path.join(__dirname, "databases", String(SCHEME), "core.db");
+  const blastDb = SCHEME_BLAST_DB
   const whenQueryLength = getBaseCount(fs.createReadStream(queryPath));
   const blastInputStream = fs.createReadStream(queryPath);
   const blastOutput = await runBlast(
@@ -150,7 +153,7 @@ async function debug(queryPath) {
   logger("debug")(`Debugging ${queryPath} core with ${SCHEME}`);
   const config = await readConfig(SCHEME);
   const { blastConfiguration } = config;
-  const blastDb = path.join(__dirname, "databases", String(SCHEME), "core.db");
+  const blastDb = SCHEME_BLAST_DB
   const blastInputStream = fs.createReadStream(queryPath);
   const blastOutput = await runBlast(
     blastDb,

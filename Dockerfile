@@ -16,6 +16,9 @@ COPY build.sh index.js /usr/local/cgps-core-fp/
 COPY src /usr/local/cgps-core-fp/src/
 COPY schemes /usr/local/cgps-core-fp/schemes/
 
+ENV CORE_DB_ROOT="/opt/core-fp/databases"
+RUN mkdir -p $CORE_DB_ROOT
+
 RUN bash build.sh
 
 ENTRYPOINT ["node", "/usr/local/cgps-core-fp/index.js"]
