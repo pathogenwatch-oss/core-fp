@@ -153,7 +153,7 @@ async function debug(queryPath) {
   logger("debug")(`Debugging ${queryPath} core with ${SCHEME}`);
   const config = await readConfig(SCHEME);
   const { blastConfiguration } = config;
-  const blastDb = SCHEME_BLAST_DB
+  const blastDb = SCHEME_BLAST_DB;
   const blastInputStream = fs.createReadStream(queryPath);
   const blastOutput = await runBlast(
     blastDb,
