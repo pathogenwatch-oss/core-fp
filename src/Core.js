@@ -373,8 +373,8 @@ class Core {
 
   addFilters(hits) {
     logger("debug")("Filtering the core hits");
-    this._removePartialHits(hits);
     this._removeShortHits(hits);
+    this._removePartialHits(hits);
     this._removeOverlappingHits(hits);
   }
 
