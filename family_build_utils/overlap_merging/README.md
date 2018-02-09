@@ -41,5 +41,9 @@ python3 ~/PycharmProjects/wgsa_families/complete_only.py . > complete_families.l
     * Extract representatives with `for i in *.ali; do python3 ~/PycharmProjects/wgsa_families/select_representative.py $i >> merged_reps.fa; done`.
 8. Extract the singleton representatives from the old core.csv with `python3 ~/PycharmProjects/wgsa_families/select_singletons.py selected_singletons.txt core.csv > singletons.fa`
 9. `cat singletons.fa merged_reps.fa > all_reps.fa`
-10. ???
-11. Profit
+10. Check the new families for cross-hits and further refine.
+    * `makeblastdb -in all_reps.fa -dbtype nucl -out new_core`
+    * `blastn -query all_reps.fa -db new_core -outfmt 6 -num_alignments 4000 > cross_hits.tab`
+    * Use the `check_crosshits.ipynb` to investigate the cross hits in `cross_hits.tab`.
+11. ???
+12. Profit

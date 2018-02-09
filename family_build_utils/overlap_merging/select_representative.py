@@ -17,6 +17,8 @@ for sequence in sequences:
 
 print(str(length), file=sys.stderr)
 
+# Each sequence is scored at each site according to how many other sequences have the same char at that location.
+# The best scoring (or randomly chosen if several score equally) is selected as the representative.
 for i in range(length):
     for sequence1 in sequences:
         test_char = sequences[sequence1].seq[i]

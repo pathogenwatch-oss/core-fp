@@ -1,5 +1,5 @@
 from sortedcontainers import SortedList
-
+# Simple helper class for dealing with the merged families aka pseudocontigs.
 
 class Pseudocontig:
     def __init__(self, name: str, query_id: str, start: int, end: int, complete: bool, reverse: bool):
@@ -22,10 +22,12 @@ class Pseudocontig:
         self.end = end
 
     def real_name(self) -> str:
+        # Real name is the same no matter what order the family IDs are read in.
         ordered = SortedList([a.replace('-', '') for a in self.names])
         return '__'.join(map(str, ordered))
 
     def orientation(self) -> str:
+        # Orientation is chosen by picking the first family name alphabetically and using the orientation of that gene.
         head = SortedList(self.names)[0]
         return '-' if head.endswith('-') else '+'
 

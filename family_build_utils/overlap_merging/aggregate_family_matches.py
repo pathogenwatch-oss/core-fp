@@ -1,8 +1,6 @@
-# Aggregates the output from create_pseudo_contigs.py
+# Counts the number of occurrences of each family in a .pc file
 import sys
 from pathlib import Path
-from pseudocontig import Pseudocontig
-from operator import itemgetter
 
 # from os import listdir
 # from os.path import isfile, join
