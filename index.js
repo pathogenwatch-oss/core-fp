@@ -77,7 +77,7 @@ async function query(queryPath, skipFp) {
   const whenReferenceDetails = skipFp ? Promise.resolve(null) : readFpProfile();
   const config = await readConfig(SCHEME);
   const { blastConfiguration } = config;
-  const blastDb = SCHEME_BLAST_DB
+  const blastDb = SCHEME_BLAST_DB;
   const whenQueryLength = getBaseCount(fs.createReadStream(queryPath));
   const blastInputStream = fs.createReadStream(queryPath);
   const blastOutput = await runBlast(
