@@ -457,185 +457,6 @@ test("Add Mutations", t => {
   });
 });
 
-test("Remove Overlapping hits", t => {
-  const coreAnalyser = new Core();
-  const testCases = {
-    noOverlap: {
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", reverse: false },
-        { queryStart: 101, queryEnd: 200, queryId: "foo", reverse: false }
-      ],
-      output: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", reverse: false },
-        { queryStart: 101, queryEnd: 200, queryId: "foo", reverse: false }
-      ]
-    },
-    differentContigs: {
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", reverse: false },
-        { queryStart: 1, queryEnd: 100, queryId: "bar", reverse: false }
-      ],
-      output: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", reverse: false },
-        { queryStart: 1, queryEnd: 100, queryId: "bar", reverse: false }
-      ]
-    },
-    littleOverlap: {
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", reverse: false },
-        { queryStart: 91, queryEnd: 190, queryId: "foo", reverse: false }
-      ],
-      output: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", reverse: false },
-        { queryStart: 91, queryEnd: 190, queryId: "foo", reverse: false }
-      ]
-    },
-    overlapLeft: {
-      // AAAAA    <- Better
-      //    BBBBB
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90, reverse: false },
-        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 80, reverse: false }
-      ],
-      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90, reverse: false }]
-    },
-    anotherOverlapLeft: {
-      // AAAAA
-      //    BBBBB <- Better
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80, reverse: false },
-        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90, reverse: false }
-      ],
-      output: [{ queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90, reverse: false }]
-    },
-    overlapMiddleBottom: {
-      // AAAAAAAAA
-      //   BBBBB <- Better
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80, reverse: false },
-        { queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 90, reverse: false }
-      ],
-      output: [{ queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 90, reverse: false }]
-    },
-    overlapMiddleTop: {
-      // AAAAAAAAA <- Better
-      //   BBBBB
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90, reverse: false },
-        { queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 80, reverse: false }
-      ],
-      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90, reverse: false }]
-    },
-    moreMatches: {
-      //   AAAAA
-      // BBBBBBB <- Better
-      input: [
-        { queryStart: 41, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 60, reverse: false },
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, reverse: false }
-      ],
-      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, reverse: false }]
-    },
-    hitName: {
-      // AAAAAAA <- Better
-      //   BBBBBBB
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A", reverse: false },
-        { queryStart: 41, queryEnd: 140, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "B", reverse: false }
-      ],
-      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A", reverse: false }]
-    },
-    startFirst: {
-      // AAAAAAA <- Better
-      //   BBBBBBB
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A", reverse: false },
-        { queryStart: 41, queryEnd: 140, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A", reverse: false }
-      ],
-      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A", reverse: false }]
-    },
-    endFirst: {
-      // I'm not sure if this can actually happen...
-      // AAAAA
-      // BBBB  <- Better
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 50, matchingBases: 60, hitId: "A", reverse: false },
-        { queryStart: 1, queryEnd: 80, queryId: "foo", pIdent: 50, matchingBases: 60, hitId: "A", reverse: false }
-      ],
-      output: [{ queryStart: 1, queryEnd: 80, queryId: "foo", pIdent: 50, matchingBases: 60, hitId: "A", reverse: false }]
-    },
-    identical: {
-      // AAAAA
-      // BBBBB <- Better
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A", reverse: false },
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A", reverse: false }
-      ],
-      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A", reverse: false }]
-    },
-    threeHits: {
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80, reverse: false },
-        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90, reverse: false },
-        { queryStart: 151, queryEnd: 250, queryId: "foo", pIdent: 85, reverse: false }
-      ],
-      output: [
-        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90, reverse: false },
-        { queryStart: 151, queryEnd: 250, queryId: "foo", pIdent: 85, reverse: false }
-      ]
-    },
-    middleOfThreeHits: {
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80, reverse: false },
-        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90, reverse: false },
-        { queryStart: 120, queryEnd: 220, queryId: "foo", pIdent: 85, reverse: false }
-      ],
-      output: [{ queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90, reverse: false }]
-    },
-    lastOfThreeHits: {
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80, reverse: false },
-        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90, reverse: false },
-        { queryStart: 120, queryEnd: 220, queryId: "foo", pIdent: 95, reverse: false }
-      ],
-      // It's not obvious whether we should keep the first hit; my suggestion is
-      // that this scenario is unlikely and this is the simplest solution to
-      // implement.
-      output: [{ queryStart: 120, queryEnd: 220, queryId: "foo", pIdent: 95, reverse: false }]
-    },
-    fourHits: {
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80, reverse: false },
-        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90, reverse: false },
-        { queryStart: 120, queryEnd: 220, queryId: "foo", pIdent: 85, reverse: false },
-        { queryStart: 180, queryEnd: 280, queryId: "foo", pIdent: 95, reverse: false }
-      ],
-      // This is very unlikely but this makes some sort of sense.
-      output: [
-        { queryStart: 60, queryEnd: 160, queryId: "foo", pIdent: 90, reverse: false },
-        { queryStart: 180, queryEnd: 280, queryId: "foo", pIdent: 95, reverse: false }
-      ]
-    },
-    differentStrands: {
-      // AAAAAAAAA
-      //   BBBBB
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80, reverse: false },
-        { queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 90, reverse: true }
-      ],
-      output: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80, reverse: false },
-        { queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 90, reverse: true }
-      ]
-    }
-  };
-  _.forEach(testCases, ({ input, output: expected }, testName) => {
-    coreAnalyser._removeOverlappingHits(input);
-    const actual = input;
-    coreAnalyser._removeFiltered(actual);
-    t.deepEqual(actual, expected, testName);
-  });
-});
-
 test("Remove short hits", t => {
   const testCases = [
     {
@@ -665,65 +486,9 @@ test("Remove short hits", t => {
   ];
   _.forEach(testCases, ({ config, hits, expected }) => {
     const coreAnalyser = new Core(config);
-    coreAnalyser._removeShortHits(hits);
-    coreAnalyser._removeFiltered(hits);
+    coreAnalyser.tagShortHits(hits);
+    coreAnalyser._removeTaggedHits(hits);
     t.deepEqual(hits, expected);
-  });
-});
-
-test("Remove partial matches", t => {
-  const testCases = {
-    allUnique: {
-      config: {
-        geneLengths: {
-          foo: 100,
-          bar: 100,
-          baz: 100
-        }
-      },
-      hits: [
-        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: false },
-        { hitId: "bar", hitStart: 1, hitEnd: 80, reverse: false },
-        { hitId: "baz", hitStart: 1, hitEnd: 100, reverse: false }
-      ],
-      expected: [
-        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: false, full: true },
-        { hitId: "bar", hitStart: 1, hitEnd: 80, reverse: false, full: false },
-        { hitId: "baz", hitStart: 1, hitEnd: 100, reverse: false, full: true }
-      ]
-    },
-    duplicates: {
-      config: {
-        geneLengths: {
-          foo: 100,
-          bar: 100,
-          baz: 100
-        }
-      },
-      hits: [
-        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: false },
-        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: true },
-        { hitId: "bar", hitStart: 1, hitEnd: 80, reverse: false },
-        { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: false },
-        { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: true },
-        { hitId: "baz", hitStart: 1, hitEnd: 80, reverse: false },
-        { hitId: "baz", hitStart: 1, hitEnd: 70, reverse: false }
-      ],
-      expected: [
-        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: false, full: true },
-        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: true, full: true },
-        { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: false, full: true },
-        { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: true, full: true },
-        { hitId: "baz", hitStart: 1, hitEnd: 80, reverse: false, full: false },
-        { hitId: "baz", hitStart: 1, hitEnd: 70, reverse: false, full: false }
-      ]
-    }
-  };
-  _.forEach(testCases, ({ config, hits, expected }, testName) => {
-    const coreAnalyser = new Core(config);
-    coreAnalyser._removePartialHits(hits);
-    coreAnalyser._removeFiltered(hits);
-    t.deepEqual(hits, expected, testName);
   });
 });
 
@@ -738,10 +503,10 @@ test("Get Hit Stats", t => {
   };
   const coreAnalyser = new Core(config);
   const hits = [
-    { hitId: "geneA", queryStart: 1, queryEnd: 100, full: true },
-    { hitId: "geneA", queryStart: 1, queryEnd: 100, full: true },
-    { hitId: "geneC", queryStart: 1, queryEnd: 80, full: false },
-    { hitId: "geneC", queryStart: 1, queryEnd: 70, full: false }
+    { hitId: "geneA", queryStart: 1, queryEnd: 100, hitStart: 1, hitEnd: 100 },
+    { hitId: "geneA", queryStart: 1, queryEnd: 100, hitStart: 1, hitEnd: 100 },
+    { hitId: "geneC", queryStart: 1, queryEnd: 80, hitStart: 10, hitEnd: 90 },
+    { hitId: "geneC", queryStart: 1, queryEnd: 70, hitStart: 10, hitEnd: 80 }
   ];
   const expected = {
     familiesMatched: 2,
@@ -765,7 +530,7 @@ test("Get Core", t => {
   const hits = [
     { hitId: "geneA", queryStart: 1001, queryEnd: 1100, hitStart: 1, hitEnd: 100, reverse: false },
     { hitId: "geneA", queryStart: 2001, queryEnd: 2100, hitStart: 1, hitEnd: 100, reverse: true },
-    { hitId: "geneB", queryStart: 3001, queryEnd: 3080, hitStart: 1, hitEnd: 80, reverse: false }, // Dropped
+    { hitId: "geneB", queryStart: 3001, queryEnd: 3080, hitStart: 1, hitEnd: 80, reverse: false },
     { hitId: "geneB", queryStart: 4001, queryEnd: 4100, hitStart: 1, hitEnd: 100, reverse: false },
     { hitId: "geneB", queryStart: 5001, queryEnd: 5100, hitStart: 1, hitEnd: 100, reverse: true },
     { hitId: "geneC", queryStart: 6001, queryEnd: 6080, hitStart: 1, hitEnd: 80, reverse: false },
@@ -774,7 +539,6 @@ test("Get Core", t => {
   const coreAnalyser = new Core(config);
   coreAnalyser.addMutations = sinon.stub();
   coreAnalyser.addQueryHash = sinon.stub();
-  coreAnalyser._removeOverlappingHits = sinon.spy();
   const summaryData = {
     assemblyId: "query",
     speciesId: 123,
@@ -786,14 +550,13 @@ test("Get Core", t => {
   t.is(actual.coreSummary.speciesId, 123);
   t.is(actual.coreSummary.familiesMatched, 3);
   t.is(actual.coreSummary.completeAlleles, 4);
-  t.is(actual.coreSummary.kernelSize, 5);
-  t.is(actual.coreProfile.size, 5);
+  t.is(actual.coreSummary.kernelSize, 6);
+  t.is(actual.coreProfile.size, 6);
   t.is(actual.coreSummary.percentKernelMatched, 100.0);
-  t.is(coreAnalyser.addMutations.callCount, 5);
-  t.is(coreAnalyser.addQueryHash.callCount, 5);
-  t.true(coreAnalyser._removeOverlappingHits.calledOnce);
-  t.is(actual.coreSummary.percentAssemblyMatched, 48.0);
-  t.is(actual.coreProfile.nt, 480);
+  t.is(coreAnalyser.addMutations.callCount, 6);
+  t.is(coreAnalyser.addQueryHash.callCount, 6);
+  t.is(actual.coreSummary.percentAssemblyMatched, 56.0);
+  t.is(actual.coreProfile.nt, 560);
 });
 
 test("Get real core", t => {
@@ -1133,43 +896,6 @@ test("Get real core", t => {
   t.deepEqual(actual, expected);
 });
 
-test("Hit filtering order", t => {
-  const sandbox = sinon.sandbox.create();
-
-  const fakeHits = [{ fake: "hit" }];
-  const fakeSummaryData = {};
-
-  const _removePartialHitsStub = sandbox.stub(
-    Core.prototype,
-    "_removePartialHits"
-  );
-  const _removeShortHitsStub = sandbox.stub(Core.prototype, "_removeShortHits");
-  const _removeOverlappingHitsStub = sandbox.stub(
-    Core.prototype,
-    "_removeOverlappingHits"
-  );
-  sandbox.stub(Core.prototype, "addQueryHash");
-  sandbox.stub(Core.prototype, "addMutations");
-  sandbox.stub(Core.prototype, "getHitStats").returns({
-    familiesMatched: 100,
-    completeAlleles: 100,
-    kernelSize: 100,
-    percentKernelMatched: 100,
-    totalMatchLength: 100
-  });
-  const formatCoreProfileStub = sandbox
-    .stub(Core.prototype, "formatCoreProfile")
-    .returns({});
-
-  const coreAnalyser = new Core({});
-  coreAnalyser.getCore(fakeHits, fakeSummaryData);
-  // The order of these could impact the results
-  t.true(_removePartialHitsStub.calledBefore(_removeShortHitsStub));
-  t.true(_removeShortHitsStub.calledBefore(_removeOverlappingHitsStub));
-  t.true(_removeOverlappingHitsStub.calledBefore(formatCoreProfileStub));
-  sandbox.restore();
-});
-
 test("Hash sequence", t => {
   const coreAnalyser = new Core({});
   const testCases = [
@@ -1247,7 +973,6 @@ test("Format Core Profile", t => {
           qI: 4
         }
       ],
-      full: true,
       queryId: "contigA",
       queryStart: 1,
       queryEnd: 10,
@@ -1276,7 +1001,6 @@ test("Format Core Profile", t => {
           qI: 8
         }
       ],
-      full: false,
       queryId: "contigB",
       queryStart: 1,
       queryEnd: 10,
@@ -1290,7 +1014,6 @@ test("Format Core Profile", t => {
       hitId: "geneC",
       queryHash: "mnop1234",
       mutations: [],
-      full: true,
       queryId: "contigA",
       queryStart: 1,
       queryEnd: 10,
@@ -1312,7 +1035,6 @@ test("Format Core Profile", t => {
           qI: 104
         }
       ],
-      full: true,
       queryId: "contigB",
       queryStart: 101,
       queryEnd: 110,

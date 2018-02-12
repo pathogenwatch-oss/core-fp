@@ -188,83 +188,7 @@ class Core {
     return mutations;
   }
 
-  _removeOverlappingHits(hits) {
-    // this version takes 0.2 - 0.3 seconds
-    const hitsOverlap = (hitA, hitB) => {
-      if (hitA.queryId !== hitB.queryId) return 0;
-      if (hitA.reverse !== hitB.reverse) return 0;
-      const [aStart, aEnd] = [hitA.queryStart, hitA.queryEnd].sort(
-        (a, b) => a - b
-      );
-      const [bStart, bEnd] = [hitB.queryStart, hitB.queryEnd].sort(
-        (a, b) => a - b
-      );
-      const sorted = [aStart, bStart, aEnd, bEnd].sort((a, b) => a - b);
-      if (_.isEqual([aStart, aEnd, bStart, bEnd], sorted))
-        return aEnd === bStart ? 1 : 0;
-      if (_.isEqual([bStart, bEnd, aStart, aEnd], sorted))
-        return bEnd === aStart ? 1 : 0;
-      if (_.isEqual([aStart, bStart, aEnd, bEnd], sorted))
-        return aEnd - bStart + 1;
-      if (_.isEqual([aStart, bStart, bEnd, aEnd], sorted))
-        return bEnd - bStart + 1;
-      if (_.isEqual([bStart, aStart, bEnd, aEnd], sorted))
-        return bEnd - aStart + 1;
-      if (_.isEqual([bStart, aStart, aEnd, bEnd], sorted))
-        return aEnd - aStart + 1;
-      throw new Error("Couldn't calculate overlap between hits");
-    };
-    _.forEach(_.groupBy(hits, "queryId"), contigHits => {
-      const unfilteredHits = _.filter(contigHits, hit => !hit.filtered);
-      _.forEach(unfilteredHits, (hitA, idx) => {
-        _.forEach(unfilteredHits.slice(idx + 1), hitB => {
-          const overlap = hitsOverlap(hitA, hitB);
-          if (overlap > 40) {
-            let removed = null;
-            let removedBy = null;
-            let removedBecause = null;
-            if (hitA.pIdent !== hitB.pIdent) {
-              [removed, removedBy] =
-                hitA.pIdent < hitB.pIdent ? [hitA, hitB] : [hitB, hitA];
-              removedBecause = "pIdent";
-            } else if (hitA.matchingBases !== hitB.matchingBases) {
-              [removed, removedBy] =
-                hitA.matchingBases < hitB.matchingBases
-                  ? [hitA, hitB]
-                  : [hitB, hitA];
-              removedBecause = "matchingBases";
-            } else if (hitA.hitId !== hitB.hitId) {
-              // Keep the alphanumerically smaller
-              [removed, removedBy] =
-                hitA.hitId > hitB.hitId ? [hitA, hitB] : [hitB, hitA];
-              removedBecause = "hitId";
-            } else if (hitA.queryStart !== hitB.queryStart) {
-              // Keep the one which starts first
-              [removed, removedBy] =
-                hitA.queryStart > hitB.queryStart ? [hitA, hitB] : [hitB, hitA];
-              removedBecause = "queryStart";
-            } else if (hitA.queryEnd !== hitB.queryEnd) {
-              // Keep the one which ends first
-              [removed, removedBy] =
-                hitA.queryEnd > hitB.queryEnd ? [hitA, hitB] : [hitB, hitA];
-              removedBecause = "queryEnd";
-            } else {
-              // Keep the first one in the list (they're essentially duplicates)
-              [removed, removedBy, removedBecause] = [hitB, hitA, "second"];
-            }
-            removed.filtered = {
-              type: "overlap",
-              by: removedBy.queryHash,
-              overlap,
-              because: removedBecause
-            };
-          }
-        });
-      });
-    });
-  }
-
-  _removeShortHits(hits) {
+  tagShortHits(hits) {
     const minMatchCoveragePercent = (this.config.minMatchCoverage || 80) / 100;
     const { geneLengths } = this.config;
     const minMatchCoverage = _.mapValues(
@@ -272,36 +196,18 @@ class Core {
       length => length * minMatchCoveragePercent
     );
     _.forEach(hits, hit => {
-      if (hit.filtered) return;
+      if (hit.tags) return;
       const { hitId, hitStart, hitEnd } = hit;
       if (Math.abs(hitStart - hitEnd) + 1 < (minMatchCoverage[hitId] || 0)) {
         logger("trace:removeHit:short")(hit);
-        hit.filtered = { type: "shortHit", minMatchCoverage: minMatchCoverage[hitId] };
+        hit.tags = { type: "shortHit", minMatchCoverage: minMatchCoverage[hitId] };
       }
     });
   }
 
-  _removePartialHits(hits) {
-    // If a gene family has a hit which matches the whole gene, use that and discard any partial matches
-    const isCompleteMatch = ({ hitId, hitStart, hitEnd }) =>
-      Math.abs(hitStart - hitEnd) + 1 === this.config.geneLengths[hitId];
-    const complete = {};
-    _.forEach(hits, hit => {
-      if (hit.filted) return;
-      if (isCompleteMatch(hit)) {
-        complete[hit.hitId] = hit.queryHash || "Unknown";
-        hit.full = true;
-      } else {
-        hit.full = false;
-      }
-    });
-    _.forEach(hits, hit => {
-      if (hit.filtered) return;
-      if (complete[hit.hitId] && !hit.full) {
-        logger("trace:removeHit:partial")(hit);
-        hit.filtered = { type: "partialHit", by: complete[hit.hitId] };
-      }
-    });
+  isCompleteMatch(hit) {
+    const { hitId, hitStart, hitEnd } = hit;
+    return Math.abs(hitStart - hitEnd) + 1 === this.config.geneLengths[hitId];
   }
 
   getHitStats(hits) {
@@ -309,11 +215,16 @@ class Core {
     const numberOfGenes = _.keys(geneLengths).length;
     let completeAlleles = 0;
     let totalMatchLength = 0;
+
+    const matchLength = ({ queryStart, queryEnd }) =>
+      Math.abs(queryEnd - queryStart + 1);
+
     const familiesMatchedSet = new Set();
-    _.forEach(hits, ({ hitId, full, queryStart, queryEnd }) => {
+    _.forEach(hits, hit => {
+      const { hitId } = hit;
       familiesMatchedSet.add(hitId);
-      if (full) completeAlleles += 1;
-      totalMatchLength += Math.abs(queryEnd - queryStart + 1);
+      if (this.isCompleteMatch(hit)) completeAlleles += 1;
+      totalMatchLength += matchLength(hit);
     });
     const [familiesMatched, kernelSize] = [
       familiesMatchedSet.size,
@@ -338,7 +249,7 @@ class Core {
     return {
       id: hit.queryHash,
       muts: hit.mutations,
-      full: hit.full,
+      full: this.isCompleteMatch(hit),
       qId: hit.queryId,
       qR,
       rR,
@@ -352,7 +263,7 @@ class Core {
     // Formats the hits against a given gene family
     const { geneLengths } = this.config;
     return {
-      alleles: _.map(hits, this._formatHit),
+      alleles: _.map(hits, hit => this._formatHit(hit)),
       refLength: geneLengths[gene]
     };
   }
@@ -367,22 +278,15 @@ class Core {
     return output;
   }
 
-  _removeFiltered(hits) {
-    _.remove(hits, hit => hit.filtered);
-  }
-
-  addFilters(hits) {
-    logger("debug")("Filtering the core hits");
-    this._removeShortHits(hits);
-    this._removePartialHits(hits);
-    this._removeOverlappingHits(hits);
+  _removeTaggedHits(hits) {
+    _.remove(hits, hit => hit.tags);
   }
 
   getCore(hits, summaryData) {
     logger("debug")("Calculating the core profile");
     const { assemblyId, speciesId, queryLength } = summaryData;
-    this.addFilters(hits);
-    this._removeFiltered(hits);
+    this.tagShortHits(hits);
+    this._removeTaggedHits(hits);
     _.forEach(hits, hit => {
       this.addQueryHash(hit);
       this.addMutations(hit);

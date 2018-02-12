@@ -167,7 +167,7 @@ async function debug(queryPath) {
     coreAnalyser.addQueryHash(hit);
     coreAnalyser.addMutations(hit);
   });
-  coreAnalyser.addFilters(hits);
+  coreAnalyser.tagShortHits(hits);
   return { scheme: SCHEME, hits };
 }
 
