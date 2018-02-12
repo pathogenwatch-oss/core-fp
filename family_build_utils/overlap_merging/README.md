@@ -45,5 +45,6 @@ python3 ~/PycharmProjects/wgsa_families/complete_only.py . > complete_families.l
     * `makeblastdb -in all_reps.fa -dbtype nucl -out new_core`
     * `blastn -query all_reps.fa -db new_core -outfmt 6 -num_alignments 4000 > cross_hits.tab`
     * Use the `check_crosshits.ipynb` to investigate the cross hits in `cross_hits.tab`.
-11. ???
-12. Profit
+11. Run `check_pc_paralogues.py` on the final FASTA (update the ID filter for the species) to look for any families that occur in more than once. These should have been removed during the cross-hits stage.
+12. ???
+13. Profit
