@@ -8,7 +8,7 @@ from operator import itemgetter
 def extract_complete():
     names = set()
     for line in file.open('r').readlines():
-        name = line.split(',')[3].replace('\n', '')
+        name = line.split('\t')[3].replace('\n', '')
         if '*' not in name:
             names.add(name)
     return names
@@ -25,4 +25,4 @@ for file in directory.iterdir():
 counter = Counter(all_families)
 
 for family, count in sorted(counter.items(), key=itemgetter(1)):
-    print(family, count, sep=',')
+    print(family, count, sep='\t')

@@ -15,7 +15,7 @@ for sequence in sequences:
     length += len(sequences[sequence].seq)
     break
 
-print(str(length), file=sys.stderr)
+# print('Length=', str(length), file=sys.stderr)
 
 # Each sequence is scored at each site according to how many other sequences have the same char at that location.
 # The best scoring (or randomly chosen if several score equally) is selected as the representative.
@@ -32,7 +32,7 @@ for i in range(length):
 
 result = sorted(scores, key=scores.get, reverse=True)
 
-for k in sorted(scores, key=scores.get, reverse=True):
-    print(k, scores[k], sep=',', file=sys.stderr)
+# for k in sorted(scores, key=scores.get, reverse=True):
+#     print(k, scores[k], sep=',', file=sys.stderr)
 
 print(">" + result[0] + '\n' + str(sequences[result[0]].seq.upper()).replace('-', ''))

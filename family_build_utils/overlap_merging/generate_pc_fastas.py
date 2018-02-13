@@ -17,7 +17,7 @@ print("Reading from ", str(source_dir), file=sys.stderr)
 # First read in the list of pseudocontigs
 ids = set()
 for line in open(str(source_file), 'r').readlines():
-    contig_name = line.replace('\n', '').replace('|', '__')
+    contig_name = line.replace('\n', '').replace('|', '__').split('\t')[0]
     ids.add(contig_name)
 
 # Then read in the FASTAs, keyed by ID
@@ -35,14 +35,15 @@ for assembly_pc_file in source_dir.iterdir():
     if str(assembly_pc_file).endswith('.pc'):
         name = os.path.basename(str(assembly_pc_file)).replace('.fasta.json.pc', '')
         for line in open(str(assembly_pc_file), 'r').readlines():
-            contig_data = line.split(',')
-            contig_id = contig_data[3]
-            if contig_id in ids:
-                orientation = contig_data[4]
-                sequence = str(assemblies[name][contig_data[0]].seq[int(contig_data[1]) - 1:int(contig_data[2])])
+            pc_data = line.split('\t')
+            pc_id = pc_data[3]
+            assembly_contig_id = pc_data[0].split(' ')[0]
+            if pc_id in ids:
+                orientation = pc_data[4]
+                sequence = str(assemblies[name][assembly_contig_id].seq[int(pc_data[1]) - 1:int(pc_data[2])])
                 sequence = sequence if '+' == orientation else str(Seq(sequence).reverse_complement())
-                fasta = '>' + '_'.join((name, contig_id)) + '\n' + sequence + '\n'
-                contigs[contig_id].append(fasta)
+                fasta = '>' + '_'.join((name, pc_id)) + '\n' + sequence + '\n'
+                contigs[pc_id].append(fasta)
 
 # Dump each pseudocontig sequence to a named FASTA file
 for contig in contigs.keys():

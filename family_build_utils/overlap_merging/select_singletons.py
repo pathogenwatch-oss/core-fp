@@ -4,7 +4,7 @@ from pathlib import Path
 select_path = Path(sys.argv[1])
 csv_path = Path(sys.argv[2])
 
-ids = set([i.replace('\n', '') for i in open(str(select_path), 'r').readlines()])
+ids = set([i.replace('\n', '').split('\t')[0] for i in open(str(select_path), 'r').readlines()])
 
 to_print = 1
 

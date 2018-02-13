@@ -61,7 +61,7 @@ pseudocontigs.append(current)
 
 # print the results
 for pc in pseudocontigs:
-    print(pc)
+    pc.csv()
 
 
 # for match2 in data:

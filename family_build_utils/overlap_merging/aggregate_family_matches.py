@@ -11,7 +11,7 @@ pseudocontigs = dict()
 
 if str(file).endswith('.pc'):
     for line in file.open('r').readlines():
-        data = line.split(',')
+        data = line.split('\t')
         name = data[3].replace('\n', '')
 
         if name not in pseudocontigs:
@@ -20,4 +20,4 @@ if str(file).endswith('.pc'):
         pseudocontigs[name] += 1
 
 for pc_name in sorted(pseudocontigs, key=pseudocontigs.get, reverse=True):
-    print(pc_name, str(pseudocontigs[pc_name]), sep=' ')
+    print(pc_name, str(pseudocontigs[pc_name]), sep='\t')

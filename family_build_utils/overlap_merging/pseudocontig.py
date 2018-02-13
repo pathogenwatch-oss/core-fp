@@ -1,4 +1,6 @@
 from sortedcontainers import SortedList
+
+
 # Simple helper class for dealing with the merged families aka pseudocontigs.
 
 class Pseudocontig:
@@ -32,7 +34,7 @@ class Pseudocontig:
         return '-' if head.endswith('-') else '+'
 
     def __repr__(self):
-        return ','.join(
+        return '\\t'.join(
             (self.id,
              str(self.start),
              str(self.end),
@@ -41,3 +43,14 @@ class Pseudocontig:
              '__'.join(map(str, self.names)),
              str(self.end - self.start + 1))
         )
+
+    def csv(self):
+        print(self.id,
+              str(self.start),
+              str(self.end),
+              self.real_name(),
+              self.orientation(),
+              '__'.join(map(str, self.names)),
+              str(self.end - self.start + 1),
+              sep='\t'
+              )
