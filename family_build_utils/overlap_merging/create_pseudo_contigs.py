@@ -38,8 +38,8 @@ for match in result:
     # if match['hitId'] in ('clfA', 'clfB', 'hdsM_2'):  # Skip these families in staph aureus
     #     continue
 
-    if match['hitId'] in ('CLS00919', 'CLS00194'): # listeria families, odd rearrangements
-        continue
+    # if match['hitId'] in ('CLS00919', 'CLS00194'): # listeria families, odd rearrangements
+    #     continue
 
     if current.id == match['queryId']:
 
