@@ -29,7 +29,7 @@ for i in range(length):
             if test_char == sequences[sequence2].seq[i]:
                 score += 1
         scores[sequence1] += score
-
+print(str(alignment_path), file=sys.stderr)
 result = sorted(scores, key=scores.get, reverse=True)
 
 # for k in sorted(scores, key=scores.get, reverse=True):

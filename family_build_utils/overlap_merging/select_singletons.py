@@ -11,4 +11,4 @@ to_print = 1
 for line in open(str(csv_path), 'r').readlines():
     data = line.split(',')
     if data[1] in ids:
-        print('>' + data[1] + '\n' + data[3].replace('\n', ''))
+        print('>' + data[1] + '\n' + data[3].replace('\n', '').replace('-', ''))

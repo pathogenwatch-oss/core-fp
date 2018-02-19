@@ -29,8 +29,17 @@ for match in result:
         if match['filtered']['type'] == 'shortHit':
             continue
 
-    # if match['hitId'] in ('group_2012', 'lbpA'):  # Skip these families (to be removed)
+        # if match['hitId'] == 'group_41':  # salmon bug hack -remove.
+        #     continue
+
+    # if match['hitId'] in ('group_2012', 'lbpA'):  # Skip these gono families (to be removed)
     #     continue
+
+    # if match['hitId'] in ('clfA', 'clfB', 'hdsM_2'):  # Skip these families in staph aureus
+    #     continue
+
+    if match['hitId'] in ('CLS00919', 'CLS00194'): # listeria families, odd rearrangements
+        continue
 
     if current.id == match['queryId']:
 
@@ -62,7 +71,6 @@ pseudocontigs.append(current)
 # print the results
 for pc in pseudocontigs:
     pc.csv()
-
 
 # for match2 in data:
 #

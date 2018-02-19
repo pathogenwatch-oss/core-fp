@@ -8,7 +8,7 @@ from operator import itemgetter
 def extract_complete():
     names = set()
     for line in file.open('r').readlines():
-        name = line.split('\t')[3].replace('\n', '')
+        name = line.split('\t')[3].replace('\n', '') # .replace('*', '') hack for pneumo to resolve most missing matches
         if '*' not in name:
             names.add(name)
     return names
