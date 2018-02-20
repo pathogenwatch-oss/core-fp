@@ -27,9 +27,13 @@ else
 fi
 
 # Generate the include string (has a superfluous ' -o' at the end).
-name_cmd=$(printf ' -name %s -o ' "${do_only[@]}");
-clean=${name_cmd::-3};
-echo "Restricted to ${clean}";
+if [[ ${do_only[@]:+${do_only[@]}} ]]; then
+  name_cmd=$(printf ' -name %s -o ' "${do_only[@]}");
+  clean=${name_cmd::-3};
+  echo "Restricted to ${clean}";
+else
+  clean=""
+fi
 
 # The actual work.
 find ./schemes ${clean} -mindepth 1 -maxdepth 1 -type d | xargs -P ${nthreads} -I scheme ./build-library.sh scheme
