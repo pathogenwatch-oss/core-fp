@@ -6,7 +6,7 @@ export DEBUG=${DEBUG:-"*,-trace*"}
 
 # If you only want to run specific species, add their codes to the array below, otherwise everything is done.
 # e.g. for pneumo & staph only do_only=(1313 1280);
-do_only=(1313);
+do_only=();
 
 echo "Starting reference build."
 
