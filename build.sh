@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 
 # Accepts a single numerical argument to specify the number of threads to use. Otherwise defaults to all available - 1
-
 set -eu -o pipefail
 export DEBUG=${DEBUG:-"*,-trace*"}
+
+# If you only want to run specific species, add their codes to the array below, otherwise everything is done.
+# e.g. for pneumo & staph only do_only=(1313 1280);
+do_only=(1313);
+
+echo "Starting reference build."
 
 # Set the number of threads to use
 nthreads=0
@@ -21,4 +26,11 @@ else
   echo "var is set to 'nthreads'";
 fi
 
-find ./schemes -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -P ${nthreads} -I scheme ./build-library.sh scheme
+
+name_cmd=$(printf ' -name %s -o ' "${do_only[@]}");
+
+clean=${name_cmd::-3};
+echo "Restricted to ${clean}";
+
+find ./schemes ${clean} -mindepth 1 -maxdepth 1 -type d | xargs -P ${nthreads} -I scheme ./build-library.sh scheme
+# find ./schemes ${clean} -mindepth 1 -maxdepth 1 -type d -print0
