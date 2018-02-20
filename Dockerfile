@@ -12,7 +12,7 @@ WORKDIR /usr/local/cgps-core-fp
 COPY package.json /usr/local/cgps-core-fp/
 RUN npm install
 
-COPY build.sh index.js /usr/local/cgps-core-fp/
+COPY build.sh build-library.sh index.js /usr/local/cgps-core-fp/
 COPY src /usr/local/cgps-core-fp/src/
 COPY schemes /usr/local/cgps-core-fp/schemes/
 
