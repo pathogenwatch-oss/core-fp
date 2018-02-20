@@ -55,7 +55,7 @@ class BlastParser {
   _pIdent(hit) {
     // Percentage identity of the hit
     const { matchingBases, alignmentLength } = hit;
-    return Math.round(1000 * (matchingBases / alignmentLength)) / 10;
+    return Math.round(10000 * (matchingBases / alignmentLength)) / 100;
   }
 
   reformatHit(queryId, hit) {

@@ -18,12 +18,15 @@ process.on("unhandledRejection", reason => {
 });
 
 const SCHEME = Number(process.env.WGSA_ORGANISM_TAXID);
-const SCHEME_PROFILE_PATH = path.join(__dirname, "databases", String(SCHEME), "fp.json");
+const CORE_DB_ROOT =
+  process.env.CORE_DB_ROOT || path.join(__dirname, "databases");
+const SCHEME_PROFILE_PATH = path.join(CORE_DB_ROOT, String(SCHEME), "fp.json");
+const SCHEME_BLAST_DB = path.join(CORE_DB_ROOT, String(SCHEME), "core.db");
 
 const argv = {
   command: process.argv[2]
 };
-if (argv.command === "query") {
+if (argv.command === "query" || argv.command === "debug") {
   argv.queryPath = process.argv[3];
 } else if (argv.command === "build") {
   argv.references = process.argv.slice(3);
@@ -74,7 +77,7 @@ async function query(queryPath, skipFp) {
   const whenReferenceDetails = skipFp ? Promise.resolve(null) : readFpProfile();
   const config = await readConfig(SCHEME);
   const { blastConfiguration } = config;
-  const blastDb = path.join(__dirname, "databases", String(SCHEME), "core.db");
+  const blastDb = SCHEME_BLAST_DB;
   const whenQueryLength = getBaseCount(fs.createReadStream(queryPath));
   const blastInputStream = fs.createReadStream(queryPath);
   const blastOutput = await runBlast(
@@ -89,7 +92,7 @@ async function query(queryPath, skipFp) {
   const queryLength = await whenQueryLength;
   const coreAnalyser = new Core(config);
   const assemblyId = queryName(queryPath);
-  const speciesId = SCHEME;
+  const speciesId = String(SCHEME);
   const summaryData = {
     assemblyId,
     speciesId,
@@ -99,16 +102,15 @@ async function query(queryPath, skipFp) {
   const referenceDetails = await whenReferenceDetails;
   if (!skipFp) {
     logger("debug")("Adding FP to Core");
+    const referenceFp = Fp.load(referenceDetails);
     const { coreProfile: queryCoreProfile } = core.coreProfile;
-    const fp = Fp.calculateFp(queryCoreProfile, referenceDetails, summaryData);
-    core.fp = fp;
+    core.fp = referenceFp.calculateFp(queryCoreProfile, summaryData);
 
     logger("debug")("Adding Filter to Core");
-    const { subTypeAssignment: referenceId } = fp;
-    const filter = new Filter();
-    const { referenceProfile } = referenceDetails;
-    const genes = _.keys(referenceProfile);
+    const { subTypeAssignment: referenceId } = core.fp;
+    const genes = referenceFp.genes();
     const numberGeneFamilies = genes.length;
+    const filter = new Filter();
     const referenceCore = await readReferenceCore(SCHEME, referenceId);
     const { coreProfile: referenceCoreProfile } = referenceCore.coreProfile;
     const bothCoreProfiles = {
@@ -142,12 +144,32 @@ async function build(references) {
     },
     { concurrency: 3 }
   );
-  const referenceNames = await whenCoresAdded;
-  return {
-    referenceNames,
-    referenceProfile: fp.getProfile(),
-    fingerprintSize: fp.fingerprintSize()
-  };
+  await whenCoresAdded;
+  fp.removeNonUniversalGenes();
+  return fp.dump();
+}
+
+async function debug(queryPath) {
+  logger("debug")(`Debugging ${queryPath} core with ${SCHEME}`);
+  const config = await readConfig(SCHEME);
+  const { blastConfiguration } = config;
+  const blastDb = SCHEME_BLAST_DB;
+  const blastInputStream = fs.createReadStream(queryPath);
+  const blastOutput = await runBlast(
+    blastDb,
+    blastConfiguration,
+    blastInputStream
+  );
+  const blastParser = new BlastParser(config);
+  const hits = await blastParser.parse(blastOutput);
+  const coreAnalyser = new Core(config);
+  _.forEach(hits, hit => {
+    coreAnalyser.addQueryHash(hit);
+    coreAnalyser.addMutations(hit);
+    coreAnalyser.addDebugStats(hit);
+  });
+  coreAnalyser.tagShortHits(hits);
+  return { scheme: SCHEME, hits };
 }
 
 if (require.main === module) {
@@ -156,6 +178,14 @@ if (require.main === module) {
     query(queryPath, RUN_FP)
       .then(JSON.stringify)
       .then(console.log)
+      .then(() => logger("debug")("Finished"))
+      .catch(logger("error"));
+  } else if (argv.command === "debug") {
+    const { queryPath } = argv;
+    debug(queryPath)
+      .then(JSON.stringify)
+      .then(console.log)
+      .then(() => logger("debug")("Finished"))
       .catch(logger("error"));
   } else if (argv.command === "build") {
     const { references } = argv;
@@ -166,8 +196,9 @@ if (require.main === module) {
         return `Wrote FP profile for ${SCHEME} to ${SCHEME_PROFILE_PATH}`;
       })
       .then(console.log)
+      .then(() => logger("debug")("Finished"))
       .catch(logger("error"));
   }
 }
 
-module.exports = { BlastParser };
+// TODO: counted sites in fp should vary between references because not all references fully match the core

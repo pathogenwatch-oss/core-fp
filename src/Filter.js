@@ -3,16 +3,17 @@ const logger = require("debug");
 const cdf = require("distributions-poisson-cdf");
 
 class Filter {
-  _compareMutations(first, second) {
+  _compareMutations(first, second, overlap) {
     logger("trace")(
       "Measuring the number of different substitutions between alleles"
     );
+    const [start, end] = overlap;
     const firstPositions = _(first)
-      .filter(({ t }) => t === "S")
+      .filter(({ t, rI }) => t === "S" && rI >= start && rI <= end)
       .keyBy("rI")
       .value();
     const secondPositions = _(second)
-      .filter(({ t }) => t === "S")
+      .filter(({ t, rI }) => t === "S" && rI >= start && rI <= end)
       .keyBy("rI")
       .value();
     const mutationPositons = new Set([
@@ -29,46 +30,43 @@ class Filter {
     return variants;
   }
 
-  _compareAlleles(query, reference) {
-    logger("trace")("Comparing alleles of gene between query and reference");
-    const differences = [];
-    _.forEach(query, queryAllele => {
-      _.forEach(reference, referenceAllele => {
-        const { id: queryId, muts: queryMutations } = queryAllele;
-        const { qR: [qStart, qEnd] } = queryAllele;
-        const queryLength = Math.abs(qStart - qEnd) + 1;
-        const { id: referenceId, muts: referenceMutations } = referenceAllele;
-        const difference = this._compareMutations(
-          queryMutations,
-          referenceMutations
-        );
-        differences.push([queryId, referenceId, difference, queryLength]);
-      });
-    });
-    const sortedDistances = _.sortBy(differences, [2]);
-    const pairedQueries = new Set();
-    const pairedReferences = new Set();
-    let totalDifferences = 0;
-    let allelesCompared = 0;
-    const bestMatches = {};
-    _.forEach(
-      sortedDistances,
-      ([queryId, referenceId, difference, queryLength]) => {
-        if (!_.has(bestMatches, queryId))
-          bestMatches[queryId] = {
-            length: queryLength,
-            variance: difference,
-            bestRefAllele: referenceId
-          };
-        if (pairedQueries.has(queryId) || pairedReferences.has(referenceId))
-          return;
-        pairedQueries.add(queryId);
-        pairedReferences.add(referenceId);
-        totalDifferences += difference;
-        allelesCompared += 1;
-      }
+  _overlap(alleleA, alleleB) {
+    function bounds(allele) {
+      const { rR } = allele;
+      return rR[0] < rR[1] ? rR : rR.reverse();
+    }
+    const [aStart, aEnd] = bounds(alleleA);
+    const [bStart, bEnd] = bounds(alleleB);
+    const sorted = [aStart, bStart, aEnd, bEnd].sort((a, b) => a - b);
+
+    if (bStart === aEnd) return [aEnd, bStart];
+    else if (aStart === bEnd) return [bEnd, aStart];
+    else if (_.isEqual(sorted, [aStart, aEnd, bStart, bEnd])) return null;
+    else if (_.isEqual(sorted, [bStart, bEnd, aStart, aEnd])) return null;
+    else if (_.isEqual(sorted, [aStart, bStart, aEnd, bEnd]))
+      return sorted.slice(1, 3);
+    else if (_.isEqual(sorted, [bStart, aStart, bEnd, aEnd]))
+      return sorted.slice(1, 3);
+    else if (_.isEqual(sorted, [aStart, bStart, bEnd, aEnd]))
+      return sorted.slice(1, 3);
+    else if (_.isEqual(sorted, [bStart, aStart, aEnd, bEnd]))
+      return sorted.slice(1, 3);
+    return null;
+  }
+
+  _compareAlleles(queryAllele, referenceAllele) {
+    logger("trace")("Comparing allele from query and reference");
+    const { muts: queryMutations } = queryAllele;
+    const { muts: referenceMutations } = referenceAllele;
+    const overlap = this._overlap(queryAllele, referenceAllele);
+    const [start, end] = overlap;
+    const length = end - start + 1;
+    const difference = this._compareMutations(
+      queryMutations,
+      referenceMutations,
+      overlap
     );
-    return { allelesCompared, differences: totalDifferences, bestMatches };
+    return { difference, length };
   }
 
   _compare(queryCoreProfile, referenceCoreProfile) {
@@ -76,21 +74,33 @@ class Filter {
     let totalDifferences = 0;
     let basesCompared = 0;
     const alleleDifferences = {};
-    _.forEach(
-      referenceCoreProfile,
-      ({ alleles: refAlleles, refLength }, gene) => {
-        const queryAlleles = _.get(queryCoreProfile, [gene, "alleles"], null);
-        if (queryAlleles === null) return;
-        const {
-          allelesCompared,
-          differences,
-          bestMatches
-        } = this._compareAlleles(queryAlleles, refAlleles);
-        basesCompared += allelesCompared * refLength;
-        totalDifferences += differences;
-        alleleDifferences[gene] = bestMatches;
-      }
-    );
+    _.forEach(referenceCoreProfile, ({ alleles: refAlleles }, gene) => {
+      if (refAlleles.length !== 1) return;
+      const refAllele = refAlleles[0];
+      const { id: refId } = refAllele;
+
+      const queryAlleles = _.get(queryCoreProfile, [gene, "alleles"], []);
+      if (queryAlleles.length !== 1) return;
+      const queryAllele = queryAlleles[0];
+      const { id: queryId } = queryAllele;
+
+      const { difference, length } = this._compareAlleles(
+        queryAllele,
+        refAllele
+      );
+      basesCompared += length;
+      totalDifferences += difference;
+      _.setWith(
+        alleleDifferences,
+        [gene, queryId],
+        {
+          length,
+          variance: difference,
+          bestRefAllele: refId
+        },
+        Object
+      );
+    });
     const mutationRate = totalDifferences / basesCompared;
     return { mutationRate, alleleDifferences };
   }
@@ -102,17 +112,40 @@ class Filter {
       referenceCoreProfile
     );
     const filteredAlleles = [];
-    _.forEach(alleleDifferences, (alleles, gene) => {
-      _.forEach(alleles, ({ length, variance }, alleleId) => {
-        const expectedVariations = Math.max(1, length * mutationRate);
-        const varianceLikelihood = cdf(variance, {
-          lambda: expectedVariations
-        });
-        if (
-          varianceLikelihood < threshold ||
-          varianceLikelihood > (1 - threshold)
-        )
-          filteredAlleles.push({ familyId: gene, alleleId, variance });
+
+    function acceptableVariance(allele) {
+      // Compare the number of variances with the number we would expect
+      // for an allele of this size with the observed mutation rate.
+      const { length, variance } = allele;
+      const expectedVariations = Math.round(Math.max(1, length * mutationRate));
+      const varianceLikelihood = cdf(variance, {
+        lambda: expectedVariations
+      });
+      if (varianceLikelihood < threshold) return false;
+      if (varianceLikelihood > 1 - threshold) return false;
+      return true;
+    }
+
+    _.forEach(queryCoreProfile, ({ alleles: queryAlleles }, gene) => {
+      let alleleIdToKeep = null;
+      if (_.keys(alleleDifferences[gene] || {}).length === 1) {
+        // We want to filter out alleles if there is more than one of them
+        // for a given gene family or if there are an unexpented number of
+        // variances between it and it's closes reference.
+        const onlyAlleleDifference = _.values(alleleDifferences[gene])[0];
+        if (acceptableVariance(onlyAlleleDifference))
+          alleleIdToKeep = _.keys(alleleDifferences[gene])[0];
+      }
+      _.forEach(queryAlleles, allele => {
+        const { id: alleleId } = allele;
+        if (allele.id === alleleIdToKeep) return;
+        const { variance } = _.get(alleleDifferences, [gene, allele.id], {});
+        const filteredAllele = {
+          familyId: gene,
+          alleleId
+        };
+        if (variance) filteredAllele.variance = variance;
+        filteredAlleles.push(filteredAllele);
       });
     });
     return { filteredAlleles, mutationRate };

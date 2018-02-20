@@ -387,6 +387,66 @@ test("Add Mutations", t => {
           qI: 22
         }
       ]
+    },
+    anotherReverse: {
+      hitStart: 1,
+      hitEnd: 25,
+      hitSequence: "A--AAA-AAAAAAAAAAAAAAAAAAAAA",
+      querySequence: "AAAAAAAGT--AAA--AAATTAAATAAA",
+      queryStart: 1,
+      queryEnd: 24,
+      mutations: [
+        {
+          t: "S",
+          wt: "T",
+          mut: "A",
+          rI: 4,
+          qI: 21
+        },
+        {
+          t: "S",
+          wt: "TT",
+          mut: "AA",
+          rI: 8,
+          qI: 17
+        },
+        {
+          t: "D",
+          wt: "TT",
+          mut: "--",
+          rI: 13,
+          qI: 13
+        },
+        {
+          t: "D",
+          wt: "TT",
+          mut: "--",
+          rI: 18,
+          qI: 10
+        },
+        {
+          t: "S",
+          wt: "TT",
+          mut: "AC",
+          rI: 20,
+          qI: 9
+        },
+        {
+          t: "I",
+          wt: "-",
+          mut: "T",
+          rI: 21,
+          qI: 7
+        },
+        {
+          t: "I",
+          wt: "--",
+          mut: "TT",
+          rI: 24,
+          qI: 3
+        }
+      ],
+      reverse: true
     }
   };
   _.forEach(testCases, (testCase, testName) => {
@@ -394,172 +454,6 @@ test("Add Mutations", t => {
     delete testCase.mutations;
     coreAnalyser.addMutations(testCase);
     t.deepEqual(testCase.mutations, expected, `${testName}: ${hitSequence} => ${querySequence}`);
-  });
-});
-
-test("Remove Overlapping hits", t => {
-  const coreAnalyser = new Core();
-  const testCases = {
-    noOverlap: {
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo" },
-        { queryStart: 101, queryEnd: 200, queryId: "foo" }
-      ],
-      output: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo" },
-        { queryStart: 101, queryEnd: 200, queryId: "foo" }
-      ]
-    },
-    differentContigs: {
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo" },
-        { queryStart: 1, queryEnd: 100, queryId: "bar" }
-      ],
-      output: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo" },
-        { queryStart: 1, queryEnd: 100, queryId: "bar" }
-      ]
-    },
-    littleOverlap: {
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo" },
-        { queryStart: 91, queryEnd: 190, queryId: "foo" }
-      ],
-      output: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo" },
-        { queryStart: 91, queryEnd: 190, queryId: "foo" }
-      ]
-    },
-    overlapLeft: {
-      // AAAAA    <- Better
-      //    BBBBB
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90 },
-        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 80 }
-      ],
-      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90 }]
-    },
-    anotherOverlapLeft: {
-      // AAAAA
-      //    BBBBB <- Better
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
-        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 }
-      ],
-      output: [{ queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 }]
-    },
-    overlapMiddleBottom: {
-      // AAAAAAAAA
-      //   BBBBB <- Better
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
-        { queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 90 }
-      ],
-      output: [{ queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 90 }]
-    },
-    overlapMiddleTop: {
-      // AAAAAAAAA <- Better
-      //   BBBBB
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90 },
-        { queryStart: 21, queryEnd: 80, queryId: "foo", pIdent: 80 }
-      ],
-      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 90 }]
-    },
-    moreMatches: {
-      //   AAAAA
-      // BBBBBBB <- Better
-      input: [
-        { queryStart: 41, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 60 },
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100 }
-      ],
-      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100 }]
-    },
-    hitName: {
-      // AAAAAAA <- Better
-      //   BBBBBBB
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" },
-        { queryStart: 41, queryEnd: 140, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "B" }
-      ],
-      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" }]
-    },
-    startFirst: {
-      // AAAAAAA <- Better
-      //   BBBBBBB
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" },
-        { queryStart: 41, queryEnd: 140, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" }
-      ],
-      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" }]
-    },
-    endFirst: {
-      // I'm not sure if this can actually happen...
-      // AAAAA
-      // BBBB  <- Better
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 50, matchingBases: 60, hitId: "A" },
-        { queryStart: 1, queryEnd: 80, queryId: "foo", pIdent: 50, matchingBases: 60, hitId: "A" }
-      ],
-      output: [{ queryStart: 1, queryEnd: 80, queryId: "foo", pIdent: 50, matchingBases: 60, hitId: "A" }]
-    },
-    identical: {
-      // AAAAA
-      // BBBBB <- Better
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" },
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" }
-      ],
-      output: [{ queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 100, matchingBases: 100, hitId: "A" }]
-    },
-    threeHits: {
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
-        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 },
-        { queryStart: 151, queryEnd: 250, queryId: "foo", pIdent: 85 }
-      ],
-      output: [
-        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 },
-        { queryStart: 151, queryEnd: 250, queryId: "foo", pIdent: 85 }
-      ]
-    },
-    middleOfThreeHits: {
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
-        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 },
-        { queryStart: 121, queryEnd: 220, queryId: "foo", pIdent: 85 }
-      ],
-      output: [{ queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 }]
-    },
-    lastOfThreeHits: {
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
-        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 },
-        { queryStart: 121, queryEnd: 220, queryId: "foo", pIdent: 95 }
-      ],
-      // It's not obvious whether we should keep the first hit; my suggestion is
-      // that this scenario is unlikely and this is the simplest solution to
-      // implement.
-      output: [{ queryStart: 121, queryEnd: 220, queryId: "foo", pIdent: 95 }]
-    },
-    fourHits: {
-      input: [
-        { queryStart: 1, queryEnd: 100, queryId: "foo", pIdent: 80 },
-        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 },
-        { queryStart: 121, queryEnd: 220, queryId: "foo", pIdent: 85 },
-        { queryStart: 181, queryEnd: 280, queryId: "foo", pIdent: 95 }
-      ],
-      // This is very unlikely but this makes some sort of sense.
-      output: [
-        { queryStart: 61, queryEnd: 160, queryId: "foo", pIdent: 90 },
-        { queryStart: 181, queryEnd: 280, queryId: "foo", pIdent: 95 }
-      ]
-    }
-  };
-  _.forEach(testCases, ({ input, output: expected }, testName) => {
-    coreAnalyser._removeOverlappingHits(input);
-    const actual = input;
-    t.deepEqual(actual, expected, testName);
   });
 });
 
@@ -592,63 +486,9 @@ test("Remove short hits", t => {
   ];
   _.forEach(testCases, ({ config, hits, expected }) => {
     const coreAnalyser = new Core(config);
-    coreAnalyser._removeShortHits(hits);
+    coreAnalyser.tagShortHits(hits);
+    coreAnalyser._removeTaggedHits(hits);
     t.deepEqual(hits, expected);
-  });
-});
-
-test("Remove partial matches", t => {
-  const testCases = {
-    allUnique: {
-      config: {
-        geneLengths: {
-          foo: 100,
-          bar: 100,
-          baz: 100
-        }
-      },
-      hits: [
-        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: false },
-        { hitId: "bar", hitStart: 1, hitEnd: 80, reverse: false },
-        { hitId: "baz", hitStart: 1, hitEnd: 100, reverse: false }
-      ],
-      expected: [
-        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: false, full: true },
-        { hitId: "bar", hitStart: 1, hitEnd: 80, reverse: false, full: false },
-        { hitId: "baz", hitStart: 1, hitEnd: 100, reverse: false, full: true }
-      ]
-    },
-    duplicates: {
-      config: {
-        geneLengths: {
-          foo: 100,
-          bar: 100,
-          baz: 100
-        }
-      },
-      hits: [
-        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: false },
-        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: true },
-        { hitId: "bar", hitStart: 1, hitEnd: 80, reverse: false },
-        { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: false },
-        { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: true },
-        { hitId: "baz", hitStart: 1, hitEnd: 80, reverse: false },
-        { hitId: "baz", hitStart: 1, hitEnd: 70, reverse: false }
-      ],
-      expected: [
-        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: false, full: true },
-        { hitId: "foo", hitStart: 1, hitEnd: 100, reverse: true, full: true },
-        { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: false, full: true },
-        { hitId: "bar", hitStart: 1, hitEnd: 100, reverse: true, full: true },
-        { hitId: "baz", hitStart: 1, hitEnd: 80, reverse: false, full: false },
-        { hitId: "baz", hitStart: 1, hitEnd: 70, reverse: false, full: false }
-      ]
-    }
-  };
-  _.forEach(testCases, ({ config, hits, expected }, testName) => {
-    const coreAnalyser = new Core(config);
-    coreAnalyser._removePartialHits(hits);
-    t.deepEqual(hits, expected, testName);
   });
 });
 
@@ -663,10 +503,10 @@ test("Get Hit Stats", t => {
   };
   const coreAnalyser = new Core(config);
   const hits = [
-    { hitId: "geneA", queryStart: 1, queryEnd: 100, full: true },
-    { hitId: "geneA", queryStart: 1, queryEnd: 100, full: true },
-    { hitId: "geneC", queryStart: 1, queryEnd: 80, full: false },
-    { hitId: "geneC", queryStart: 1, queryEnd: 70, full: false }
+    { hitId: "geneA", queryStart: 1, queryEnd: 100, hitStart: 1, hitEnd: 100 },
+    { hitId: "geneA", queryStart: 1, queryEnd: 100, hitStart: 1, hitEnd: 100 },
+    { hitId: "geneC", queryStart: 1, queryEnd: 80, hitStart: 10, hitEnd: 90 },
+    { hitId: "geneC", queryStart: 1, queryEnd: 70, hitStart: 10, hitEnd: 80 }
   ];
   const expected = {
     familiesMatched: 2,
@@ -690,16 +530,15 @@ test("Get Core", t => {
   const hits = [
     { hitId: "geneA", queryStart: 1001, queryEnd: 1100, hitStart: 1, hitEnd: 100, reverse: false },
     { hitId: "geneA", queryStart: 2001, queryEnd: 2100, hitStart: 1, hitEnd: 100, reverse: true },
-    { hitId: "geneB", queryStart: 3001, queryEnd: 3080, hitStart: 1, hitEnd: 80, reverse: false }, // Dropped
+    { hitId: "geneB", queryStart: 3001, queryEnd: 3080, hitStart: 1, hitEnd: 80, reverse: false },
     { hitId: "geneB", queryStart: 4001, queryEnd: 4100, hitStart: 1, hitEnd: 100, reverse: false },
     { hitId: "geneB", queryStart: 5001, queryEnd: 5100, hitStart: 1, hitEnd: 100, reverse: true },
     { hitId: "geneC", queryStart: 6001, queryEnd: 6080, hitStart: 1, hitEnd: 80, reverse: false },
     { hitId: "geneC", queryStart: 7001, queryEnd: 7070, hitStart: 1, hitEnd: 70, reverse: false } // Dropped
   ];
   const coreAnalyser = new Core(config);
-  coreAnalyser.addMutations = sinon.stub().returns([]);
-  coreAnalyser.addQueryHash = sinon.stub().returns([]);
-  coreAnalyser._removeOverlappingHits = sinon.spy();
+  coreAnalyser.addMutations = sinon.stub();
+  coreAnalyser.addQueryHash = sinon.stub();
   const summaryData = {
     assemblyId: "query",
     speciesId: 123,
@@ -711,51 +550,350 @@ test("Get Core", t => {
   t.is(actual.coreSummary.speciesId, 123);
   t.is(actual.coreSummary.familiesMatched, 3);
   t.is(actual.coreSummary.completeAlleles, 4);
-  t.is(actual.coreSummary.kernelSize, 5);
-  t.is(actual.coreProfile.size, 5);
+  t.is(actual.coreSummary.kernelSize, 6);
+  t.is(actual.coreProfile.size, 6);
   t.is(actual.coreSummary.percentKernelMatched, 100.0);
-  t.is(coreAnalyser.addMutations.callCount, 5);
-  t.is(coreAnalyser.addQueryHash.callCount, 5);
-  t.true(coreAnalyser._removeOverlappingHits.calledOnce);
-  t.is(actual.coreSummary.percentAssemblyMatched, 48.0);
-  t.is(actual.coreProfile.nt, 480);
+  t.is(coreAnalyser.addMutations.callCount, 6);
+  t.is(coreAnalyser.addQueryHash.callCount, 6);
+  t.is(actual.coreSummary.percentAssemblyMatched, 56.0);
+  t.is(actual.coreProfile.nt, 560);
 });
 
-test("Hit filtering order", t => {
-  const sandbox = sinon.sandbox.create();
-
-  const fakeHits = [{ fake: "hit" }];
-  const fakeSummaryData = {};
-
-  const _removePartialHitsStub = sandbox.stub(
-    Core.prototype,
-    "_removePartialHits"
-  );
-  const _removeShortHitsStub = sandbox.stub(Core.prototype, "_removeShortHits");
-  const _removeOverlappingHitsStub = sandbox.stub(
-    Core.prototype,
-    "_removeOverlappingHits"
-  );
-  sandbox.stub(Core.prototype, "addQueryHash");
-  sandbox.stub(Core.prototype, "addMutations");
-  sandbox.stub(Core.prototype, "getHitStats").returns({
-    familiesMatched: 100,
-    completeAlleles: 100,
-    kernelSize: 100,
-    percentKernelMatched: 100,
-    totalMatchLength: 100
+test("Get real core", t => {
+  const hits = [
+    {
+      hitAccession: "3",
+      hitId: "vapA",
+      hitSequence: "ATGCAGTTTTACCTGCAACCGCAGGCGCAGTTTACCTACTTGGGCGTAAACGGCGGCTTTACCGACAGCGAGGGGCGGCGGTCGGGCTGCTCGGCAGCGGTCAGTGGCAAATCCGCGCCGGCATTCGGGCAAAAACCCGTTTTGCTTTGCGTAACGGTGTCAATCTTCAGCCTTTTGCCGCTTTTAATGTTTTGCACAGGTCAAAATCTTTCGGCATGGAAATGGACGGCGAAAAACAGACGCTGGCAGGCAGGACGGCGCTCGAAGGGCGGTTTGGCATTGAAGCCGGTTGGAAAGGCCATATGTCCGCACGCATCGGATACGGCAAAAGGACGGACGGCGACAAAGAAGCCGCATTGTCGGTCAAATGGTTGTTTTGATGCGCCGGGAAATGTTTTGACACACAGGCGGCACACCTGCACGGCCCCGTGCGCCGCCCCGCAAACCGATCCGAACCCTGCCGCCCCGAAGGGCGGGGCATAA",
+      hitStart: 1,
+      hitEnd: 483,
+      reverse: false,
+      queryId: "ERR1549755.17328_4_44.1 Top Hit:WHO_G Neisseria gonorrhoeae WHO G",
+      querySequence: "ATGCAGTTTTACCTGCAACCGCAGGCGCAGTTTACCTACTTGGGCGTAAACGGCGGCTTTACCGACAGCGAGGGGCGGCGGTCGGGCTGCTCGGCAGCGGTCAGTGGCAAATCCGCGCCGGCATTCGGGCAAAAACCCGTTTTGCTTTGCGTAACGGTGTCAATCTTCAGCCTTTTGCCGCTTTTAATGTTTTGCACAGGTCAAAATCTTTCGGCATGGAAATGGACGGCGAAAAACAGACGCTGGCAGGCAGGACGGCGCTCGAAGGGCGGTTTGGCATTGAAGCCGGTTGGAAAGGCCATATGTCCGCACGCATCGGATACGGCAAAAGGACGGACGGCGACAAAGAAGCCGCATTGTCGGTCAAATGGTTGTTTTGATGCGCCGGGAAATGTTTTGACGCACAGGCGGCACACCTGCACGGCCCCGTGCGCCGCCCCGCAAACCGATCCGAACCCTGCCGCCCCGAAGGGCGGGGCATAA",
+      queryStart: 270073,
+      queryEnd: 270555,
+      matchingBases: 482,
+      alignmentLength: 483,
+      eValue: 0,
+      pIdent: 99.79
+    },
+    {
+      hitAccession: "1",
+      hitId: "group_2700",
+      hitSequence: "TCATTTCCACAACGCGCGTTTCAACATAATCAACCAATCCTTCTTATCCAAAACGGGGCGTTGTGCAAACACATCGTATCGGCACGCGTCCAGTTTCTGCAAAATCAACTGCGCCCCCAACACAATCATACGGAGTTCCAAACCGATACGCCCTTTCAATTCGCGCGCCAAAGGCGAACCCGCCTTCAGCATACGGAATGCACGCCGGCACTCATACGCCATCAGCCGCTGAAACGCCGCATCCGCCCGTCCTGCTGCGATCTGTTCCTCAGAAACACCGAATTTCAACAAATCGTCCTGCGGGATATAAACCCTGCCCTTTTGCCAATCCACAGCTACATCCTGCCAAAAATTCACCAGTTGCAAAGCCGTACAAATACCGTCGCTTTGCGCTACGCACACCGCATCCGTTTTCCCGTATAAAGCCAGCATAATGCGTCCGACAGGGTTGGCGGAACGCCGGCAATAATCGGTCAGATCGCCGAAATGCGCGTACCGCGTTTTAACCACATCCTGCGAAAACGCCGAGAGCAGATCATAAAACGGCTGCAAATCCAAACCGAACGGCACAACCGCCTCGGCATCCAATCGTGCAATCAAAGGATGCGCCGACCGGCCGCCCGATGCCAACACGTCCAACTCGCGCCGCAAACCCTCCAACCCCGACAACCTGGCTTCAGACGGCATACTGCCCTCGTCCGCCATATCGTCCGCCGTCCGTGCAAACGCATACACCGCATGAACCGGCTTCCTCAACCTGCGCGGCAAAACCAGCGAACCGACGGGAAAATTCTCATAATGCCCAACCGACAT",
+      hitStart: 1,
+      hitEnd: 813,
+      reverse: true,
+      queryId: "ERR1549755.17328_4_44.7 Top Hit:WHO_K Neisseria gonorrhoeae WHO K",
+      querySequence: "TCATTTCCACAACGCGCGTTTCAACATAATCAACCAATCCTTCTTATCCAAAACGGGGCGTTGTGCAAACACATCGTATCGGCACGCGTCCAGTTTCTGCAAAATCAACTGCGCCCCCAACACAATCATACGGAGTTCCAAACCGATACGCCCTTTCAATTCGCGCGCCAAAGGCGAACCCGCCTTCAGCATACGGAATGCACGCCGGCACTCATACGCCATCAGCCGCTGAAACGCCGCATCCGCCCGTCCTGCTGCGATCTGTTCCTCAGAAACACCGAATTTCAACAAATCGTCCTGCGGGATATAAACCCTGCCCTTTTGCCAATCCACAGCTACATCCTGCCAAAAATTCACCAGTTGCAAAGCCGTACAAATACCGTCGCTTTGCGCTACGCACACCGCATCCGTTTTCCCGTATAAAGCCAGCATAATGCGTCCGACAGGGTTGGCGGAACGCCGGCAATAATCGGTCAGATCGCCGAAATGCGCGTACCGCGTTTTAACCACATCCTGCGAAAACGCCGAGAGCAGATCATAAAACGGCTGCAAATCCAAACCGAACGGCACAACCGCCTCGGCATCCAATCGTGCAATCAAAGGATGCGCCGACCGGCCGCCCGATGCCAACACGTCCAACTCGCGCCGCAAACCCTCCAACCCCGACAACCTGGCTTCAGACGGCATACTGCCCTCGTCCGCCATATCGTCCGCCGTCCGTGCAAACGCATACACCGCATGAACCGGCTTCCTCAACCTGCGCGGCAAAACCAGCGAACCGACGGGAAAATTCTCATAATGCCCAACCGACAT",
+      queryStart: 25576,
+      queryEnd: 26388,
+      matchingBases: 813,
+      alignmentLength: 813,
+      eValue: 0,
+      pIdent: 100
+    },
+    {
+      hitAccession: "2",
+      hitId: "group_3366",
+      hitSequence: "CTATGCACCCCCTTGCGAGCCCGACACTACGCAACATCTTGAGAACCCATCCTGTCAAGAATACCCGAACCGTCCCGATACACCGTAATCCTAAAACCCGTCATTCCCGCGCTGCAATGGGACATCGGCGGCAGCGGGGCGGTTTTCCCTTCGCTCGCACTGTTTCTGCTCTGTTTCATCATAGGTATGCACAACACGGGGATGACGCTTCTGCCGGGCGGTGCAATCCGTTCGACGCACATGGCCCGGCACGGCAGCCGACTTGGGCATCGAAATCCCGCGCGTGCCGTACTATAGTGGATTAA",
+      hitStart: 35,
+      hitEnd: 339,
+      reverse: false,
+      queryId: "ERR1549755.17328_4_44.18 Top Hit:WHO_K Neisseria gonorrhoeae WHO K",
+      querySequence: "CTATGCACCCCCTTGCGAGCCCGACACTACGCAACATCTTGAGAACCCATCCTGTCAAGAATACCCGAACCGTCCCGATACACCGTAATCCTAAAACCCGCCATTCCCGCGCTGCAATGGGACATCGGCGGCAGCGGGGCGGTTTTCCCTTCGCTCGCACTGTTTCTGCTCTGTTTCATCATAGGTATGCACAACACGGGGATGACGCTTCTGCCGGGCGGTGCAATCTGTTCGACGCACATGGCCCGGCACGGCAGCCGACTTGGGCATCGAAATCCCGCGCGTGCCGTACTATAGTGGATTAA",
+      queryStart: 1,
+      queryEnd: 305,
+      matchingBases: 303,
+      alignmentLength: 305,
+      eValue: 2.6681e-156,
+      pIdent: 99.34
+    },
+    {
+      hitAccession: "0",
+      hitId: "group_540",
+      hitSequence: "TTACCAAGCAAACGGTTTCCGCTTCATATCCGAAAGGTTGTCAACTTCATTATCCAGCAAGAACTGCTCAAAAGCATTCCAACCTTTCTTTTCCACCAATTCTGCTTCCTGTTTATACAAGGGGACAAGCAAAGGGAAAACGATATTGTAGTGTTCGCCATAACAGACCTGAAAATCATCATCGAAATAAAATGGGGCGGAAACATACAGTGCATCCAT",
+      hitStart: 1,
+      hitEnd: 219,
+      reverse: true,
+      queryId: "ERR1549755.17328_4_44.16 Top Hit:WHO_L Neisseria gonorrhoeae WHO L",
+      querySequence: "TTACCAAGCAAACGGTTTCCGCTTCATATCCGAAAGGTTGTCAACTTCATTATCCAGCAAGAACTGCTCAAAAGCATTCCAACCTTTCTTTTCCACCAATTCTGCTTCCTGTTTATACAAGGGGACAAGCAAAGGGAAAACGATATTGTAGTGTTCGCCATAACAGACCTGAAAATCATCATCGAAATAAAATGGGGCGGAAACATACAGTGCATCCAT",
+      queryStart: 33105,
+      queryEnd: 33323,
+      matchingBases: 219,
+      alignmentLength: 219,
+      eValue: 3.64375e-112,
+      pIdent: 100
+    },
+    {
+      hitAccession: "0",
+      hitId: "group_540",
+      hitSequence: "ATGGATGCACTGTATGTTTCCGCCCCATTTTATTTCGATGATGATTTTCAGGTCTGTTATGGCGAACACTACAATATCGTTTTCCCTTTGCTTGTCCCCTTGTATAAACAGGAAGCAGAATTGGTGGAAAAGAAAGGTTGGAATGCTTTTGAGCAGTTCTTGCTGGATAATGAAGTTGACAACCTTTCGGATATGAAGCGGAAACCGTTTGCTTGGTAA",
+      hitStart: 1,
+      hitEnd: 219,
+      reverse: false,
+      queryId: "ERR1549755.17328_4_44.10 Top Hit:WHO_M Neisseria gonorrhoeae WHO M",
+      querySequence: "ATGGACGCACTGTATGTTTCCGCCCCATTTTATTTCGACGATGATTTCCAAGTCTGTTATGGCGAACACTACAATATTGTTTTCCCTTTGCTTGTCCCCTTGTATAAACAGGAAGCCGAATTGGTGGAAAAAAAGGGTTGGAATGCTTTTGAGCAGTTCTTGTTGGATAATGAAGTTGGCAACCTTTCGGATATGAATAGGAAACCGTTTGTTTGGTAA",
+      queryStart: 3411,
+      queryEnd: 3629,
+      matchingBases: 206,
+      alignmentLength: 219,
+      eValue: 5.62212e-94,
+      pIdent: 94.06
+    },
+    {
+      hitAccession: "2",
+      hitId: "group_3366",
+      hitSequence: "ATGCGGCGGGCTGAAGCCCGCCCTGCAACCCTCTCTATGCACCCCCTTGCGAGCCCGACACTACGCAACATCTTGAGAACCCATCCTGTCAAGAATACCCGAACCGTCCCGATACACCGTAATCCTAAAACCCGTCATTCCCGCGC",
+      hitStart: 1,
+      hitEnd: 146,
+      reverse: false,
+      queryId: "ERR1549755.17328_4_44.13 Top Hit:WHO_K Neisseria gonorrhoeae WHO K",
+      querySequence: "ATGCGGCGGGCTGAAGCCCGCCCTGCAACCCTCTCTATGCACCCCCTTGCGAGCCCGACACTACGCAACATCTTGAGAACCCATCCTGTCAAGAATACCCGAACCGTCCCGATACACCGTAATCCTAAAACCCGCCATTCCCGCGC",
+      queryStart: 55315,
+      queryEnd: 55460,
+      matchingBases: 145,
+      alignmentLength: 146,
+      eValue: 9.44979e-71,
+      pIdent: 99.32
+    },
+    {
+      hitAccession: "2",
+      hitId: "group_3366",
+      hitSequence: "TGCACCCCCTTGCGAGCCCGACACTACGCAACATCTTGAGAACCCATCCTGTCAAGAATACCCGAACCGTCCCGATACACCGTAATCCTAAAACCCGTCATTCCCGCGC",
+      hitStart: 38,
+      hitEnd: 146,
+      reverse: false,
+      queryId: "ERR1549755.17328_4_44.30 Top Hit:WHO_L Neisseria gonorrhoeae WHO L",
+      querySequence: "TGCACCCCCTTGCGAGCCCGACACTACGCAACATCTTGAGAACCCATCCTGTCAAGAATACCCGAACCGTCCCGATACACCGTAATCCTAAAACCCGCCATTCCCGCGC",
+      queryStart: 1,
+      queryEnd: 109,
+      matchingBases: 108,
+      alignmentLength: 109,
+      eValue: 1.49168e-51,
+      pIdent: 99.08
+    }
+  ];
+  const summaryData = {
+    assemblyId: "example",
+    speciesId: 485,
+    queryLength: 2155105
+  };
+  const coreAnalyser = new Core({
+    minMatchCoverage: 80.0,
+    name: "Neisseria gonorrhoeae",
+    overlapThreshold: 40,
+    geneLengths: {
+      abgT: 1569,
+      group_2700: 813,
+      group_3366: 339,
+      group_540: 219,
+      vapA: 483
+    }
   });
-  const formatCoreProfileStub = sandbox
-    .stub(Core.prototype, "formatCoreProfile")
-    .returns({});
-
-  const coreAnalyser = new Core({});
-  coreAnalyser.getCore(fakeHits, fakeSummaryData);
-  // The order of these could impact the results
-  t.true(_removePartialHitsStub.calledBefore(_removeShortHitsStub));
-  t.true(_removeShortHitsStub.calledBefore(_removeOverlappingHitsStub));
-  t.true(_removeOverlappingHitsStub.calledBefore(formatCoreProfileStub));
-  sandbox.restore();
+  const actual = coreAnalyser.getCore(hits, summaryData);
+  const expected = {
+    coreSummary: {
+      assemblyId: "example",
+      speciesId: 485,
+      familiesMatched: 4,
+      completeAlleles: 4,
+      kernelSize: 5,
+      percentKernelMatched: 80.0,
+      percentAssemblyMatched: 0.1
+    },
+    coreProfile: {
+      id: "example",
+      size: 5,
+      nt: 2039,
+      coreProfile: {
+        vapA: {
+          alleles: [
+            {
+              id: "e5c2930616d1778252b1cc0133a92cf2d9c845f8",
+              muts: [
+                {
+                  t: "S",
+                  wt: "A",
+                  mut: "G",
+                  rI: 402,
+                  qI: 270474
+                }
+              ],
+              full: true,
+              qId: "ERR1549755.17328_4_44.1 Top Hit:WHO_G Neisseria gonorrhoeae WHO G",
+              qR: [270073, 270555],
+              rR: [1, 483],
+              pid: 99.79,
+              evalue: 0,
+              r: false
+            }
+          ],
+          refLength: 483
+        },
+        group_2700: {
+          alleles: [
+            {
+              id: "6ec86f685350dabde157dd785cae8ed31fe18bb7",
+              muts: [],
+              full: true,
+              qId: "ERR1549755.17328_4_44.7 Top Hit:WHO_K Neisseria gonorrhoeae WHO K",
+              qR: [25576, 26388],
+              rR: [1, 813],
+              pid: 100,
+              evalue: 0,
+              r: true
+            }
+          ],
+          refLength: 813
+        },
+        group_3366: {
+          alleles: [
+            {
+              id: "16297782ec34cdd10d3192d40d19396cf428d01d",
+              muts: [
+                {
+                  t: "S",
+                  wt: "T",
+                  mut: "C",
+                  rI: 135,
+                  qI: 101
+                },
+                {
+                  t: "S",
+                  wt: "C",
+                  mut: "T",
+                  rI: 263,
+                  qI: 229
+                }
+              ],
+              full: false,
+              qId: "ERR1549755.17328_4_44.18 Top Hit:WHO_K Neisseria gonorrhoeae WHO K",
+              qR: [1, 305],
+              rR: [35, 339],
+              pid: 99.34,
+              evalue: 2.6681e-156,
+              r: false
+            }
+          ],
+          refLength: 339
+        },
+        group_540: {
+          alleles: [
+            {
+              id: "48a627ec2997b8d3d58291af30006c2699bbea2d",
+              muts: [],
+              full: true,
+              qId: "ERR1549755.17328_4_44.16 Top Hit:WHO_L Neisseria gonorrhoeae WHO L",
+              qR: [33105, 33323],
+              rR: [1, 219],
+              pid: 100,
+              evalue: 3.64375e-112,
+              r: true
+            },
+            {
+              id: "9b6a20d1f2474588ed5ba9a2b915765eedb69387",
+              muts: [
+                {
+                  t: "S",
+                  wt: "T",
+                  mut: "C",
+                  rI: 6,
+                  qI: 3416
+                },
+                {
+                  t: "S",
+                  wt: "T",
+                  mut: "C",
+                  rI: 39,
+                  qI: 3449
+                },
+                {
+                  t: "S",
+                  wt: "T",
+                  mut: "C",
+                  rI: 48,
+                  qI: 3458
+                },
+                {
+                  t: "S",
+                  wt: "G",
+                  mut: "A",
+                  rI: 51,
+                  qI: 3461
+                },
+                {
+                  t: "S",
+                  wt: "C",
+                  mut: "T",
+                  rI: 78,
+                  qI: 3488
+                },
+                {
+                  t: "S",
+                  wt: "A",
+                  mut: "C",
+                  rI: 117,
+                  qI: 3527
+                },
+                {
+                  t: "S",
+                  wt: "G",
+                  mut: "A",
+                  rI: 132,
+                  qI: 3542
+                },
+                {
+                  t: "S",
+                  wt: "A",
+                  mut: "G",
+                  rI: 135,
+                  qI: 3545
+                },
+                {
+                  t: "S",
+                  wt: "C",
+                  mut: "T",
+                  rI: 163,
+                  qI: 3573
+                },
+                {
+                  t: "S",
+                  wt: "A",
+                  mut: "G",
+                  rI: 179,
+                  qI: 3589
+                },
+                {
+                  t: "S",
+                  wt: "GC",
+                  mut: "TA",
+                  rI: 198,
+                  qI: 3608
+                },
+                {
+                  t: "S",
+                  wt: "C",
+                  mut: "T",
+                  rI: 212,
+                  qI: 3622
+                }
+              ],
+              full: true,
+              qId: "ERR1549755.17328_4_44.10 Top Hit:WHO_M Neisseria gonorrhoeae WHO M",
+              qR: [3411, 3629],
+              rR: [1, 219],
+              pid: 94.06,
+              evalue: 5.62212e-94,
+              r: false
+            }
+          ],
+          refLength: 219
+        }
+      }
+    }
+  };
+  t.deepEqual(actual, expected);
 });
 
 test("Hash sequence", t => {
@@ -835,7 +973,6 @@ test("Format Core Profile", t => {
           qI: 4
         }
       ],
-      full: true,
       queryId: "contigA",
       queryStart: 1,
       queryEnd: 10,
@@ -864,7 +1001,6 @@ test("Format Core Profile", t => {
           qI: 8
         }
       ],
-      full: false,
       queryId: "contigB",
       queryStart: 1,
       queryEnd: 10,
@@ -878,7 +1014,6 @@ test("Format Core Profile", t => {
       hitId: "geneC",
       queryHash: "mnop1234",
       mutations: [],
-      full: true,
       queryId: "contigA",
       queryStart: 1,
       queryEnd: 10,
@@ -900,7 +1035,6 @@ test("Format Core Profile", t => {
           qI: 104
         }
       ],
-      full: true,
       queryId: "contigB",
       queryStart: 101,
       queryEnd: 110,

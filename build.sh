@@ -1,23 +1,39 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
+# Accepts a single numerical argument to specify the number of threads to use. Otherwise defaults to all available - 1
 set -eu -o pipefail
+export DEBUG=${DEBUG:-"*,-trace*"}
 
-for d in $(find ./schemes -mindepth 1 -maxdepth 1 -type d); do
-  scheme_dir=$(cd $d && pwd)
-  scheme=$(basename $d);
-  if [[ -d databases/$scheme ]]; then
-    echo "Skipping BlastDb for $scheme";
+# If you only want to run specific species, add their codes to the array below, otherwise everything is done.
+# e.g. for pneumo & staph only do_only=(1313 1280);
+do_only=();
+
+echo "Starting reference build."
+
+# Set the number of threads to use
+nthreads=0
+
+if [ -z ${1+x} ]; then
+  proc_count=`cat /proc/cpuinfo | awk '/^processor/{print $3}' | tail -1`;
+  if [ "${proc_count}" -gt "1" ]; then
+    nthreads=`expr ${proc_count} - 1`; # Leave one core for other processes
   else
-    echo "Building $scheme"
-    mkdir -p databases/$scheme
-    awk -F ',' '{printf ">%s\n%s\n", $2, $4}' ${scheme_dir}/core.csv | tee databases/${scheme}/core.fa | makeblastdb -title core -in - -dbtype nucl -out databases/${scheme}/core.db  
+    nthreads=1;
   fi
-  scheme_fp="databases/${scheme}/fp.json"
-  if [[ -f $scheme_fp ]]; then
-    echo "Skipping FP for $scheme";
-  else
-    echo "Building FP for $scheme"
-    mkdir -p databases/$scheme
-    DEBUG='*' WGSA_ORGANISM_TAXID=$scheme node index.js build ${scheme_dir}/fastas/*.fasta
-  fi
-done
+  echo "nthreads is ${nthreads}";
+else
+  nthreads=$1;
+  echo "var is set to 'nthreads'";
+fi
+
+# Generate the include string (has a superfluous ' -o' at the end).
+if [[ ${do_only[@]:+${do_only[@]}} ]]; then
+  name_cmd=$(printf ' -name %s -o ' "${do_only[@]}");
+  clean=${name_cmd::-3};
+  echo "Restricted to ${clean}";
+else
+  clean=""
+fi
+
+# The actual work.
+find ./schemes ${clean} -mindepth 1 -maxdepth 1 -type d | xargs -P ${nthreads} -I scheme ./build-library.sh scheme
