@@ -4,9 +4,9 @@ from sortedcontainers import SortedList
 # Simple helper class for dealing with the merged families aka pseudocontigs.
 
 class Pseudocontig:
-    def __init__(self, name: str, query_id: str, start: int, end: int, complete: bool, reverse: bool):
+    def __init__(self, name: str, query_id: str, start: int, end: int, complete: float, reverse: bool):
         self.names = []
-        if not complete:
+        if complete != 1.0:
             name = name + '*'
         if reverse:
             name = name + '-'
@@ -15,8 +15,8 @@ class Pseudocontig:
         self.start = start
         self.end = end
 
-    def extend(self, name: str, end: int, complete: bool, reverse: bool):
-        if not complete:
+    def extend(self, name: str, end: int, complete: float, reverse: bool):
+        if complete != 1.0:
             name = name + '*'
         if reverse:
             name = name + '-'
