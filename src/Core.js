@@ -100,8 +100,8 @@ class Core {
         mut: queryBase, // Mutation aka query sequence
         refOffset,
         queryOffset,
-        refEnd: refBase == "-" ? refOffset : refOffset + 1,
-        queryEnd: queryBase == "-" ? queryOffset : queryOffset + 1
+        refEnd: refBase === "-" ? refOffset : refOffset + 1,
+        queryEnd: queryBase === "-" ? queryOffset : queryOffset + 1
       }
     }
 
@@ -208,6 +208,11 @@ class Core {
   isCompleteMatch(hit) {
     const { hitId, hitStart, hitEnd } = hit;
     return Math.abs(hitStart - hitEnd) + 1 === this.config.geneLengths[hitId];
+  }
+
+  addDebugStats(hit) {
+    const {hitId, hitStart, hitEnd} = hit;
+    hit.complete = (Math.abs(hitStart - hitEnd) + 1) / this.config.geneLengths[hitId];
   }
 
   getHitStats(hits) {

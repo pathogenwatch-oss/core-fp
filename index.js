@@ -166,6 +166,7 @@ async function debug(queryPath) {
   _.forEach(hits, hit => {
     coreAnalyser.addQueryHash(hit);
     coreAnalyser.addMutations(hit);
+    coreAnalyser.addDebugStats(hit);
   });
   coreAnalyser.tagShortHits(hits);
   return { scheme: SCHEME, hits };
