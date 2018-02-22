@@ -1,7 +1,10 @@
-from pathlib import Path
+import re
 import sys
+from pathlib import Path
+
 from Bio import SeqIO
 
+name_p = re.compile(r'^.+[A-Za-z0-9]_([A-Za-z0-9][A-Za-z0-9\-_]+)$')
 # Script checks if alignments are square
 
 alignment_path = Path(sys.argv[1])
@@ -35,4 +38,7 @@ result = sorted(scores, key=scores.get, reverse=True)
 # for k in sorted(scores, key=scores.get, reverse=True):
 #     print(k, scores[k], sep=',', file=sys.stderr)
 
-print(">" + result[0] + '\n' + str(sequences[result[0]].seq.upper()).replace('-', ''))
+m = name_p.match(result[0])
+# print(result[0], str(m))
+
+print(">" + m.group(1) + '\n' + str(sequences[result[0]].seq.upper()).replace('-', ''))

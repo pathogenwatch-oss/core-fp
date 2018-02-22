@@ -6,7 +6,7 @@ from sortedcontainers import SortedList
 class Pseudocontig:
     def __init__(self, name: str, query_id: str, start: int, end: int, complete: float, reverse: bool):
         self.names = []
-        if complete != 1.0:
+        if complete < 0.95:
             name = name + '*'
         if reverse:
             name = name + '-'
@@ -16,7 +16,7 @@ class Pseudocontig:
         self.end = end
 
     def extend(self, name: str, end: int, complete: float, reverse: bool):
-        if complete != 1.0:
+        if complete < 0.95:
             name = name + '*'
         if reverse:
             name = name + '-'
