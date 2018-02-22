@@ -1,10 +1,10 @@
-import re
 import sys
 from pathlib import Path
 
 from Bio import SeqIO
 
-name_p = re.compile(r'^.+[A-Za-z0-9]_([A-Za-z0-9][A-Za-z0-9\-_]+)$')
+# This regex doesn't always work
+# name_p = re.compile(r'^.+[A-Za-z0-9]_([A-Za-z0-9][A-Za-z0-9\-_]+)$')
 # Script checks if alignments are square
 
 alignment_path = Path(sys.argv[1])
