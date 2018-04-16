@@ -1345,7 +1345,6 @@
     "yajR": 1365,
     "flhC": 579,
     "comM_1": 234,
-    "yfaY_2": 177,
     "STY1027": 573,
     "yiiP": 897,
     "pgi": 1650,
@@ -3301,7 +3300,7 @@
     "yohJ__yohK_1": 1091,
     "yqcB__yqcC": 1112,
     "yqgE__yqgF": 980,
-    "fumC__tus": 2330
+    "fumC__tus": 2330,
  },
  "minMatchCoverage": 80.0,
  "name": "Salmonella Typhi",
