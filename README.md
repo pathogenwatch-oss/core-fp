@@ -24,7 +24,7 @@ npm test
 ## Build the image
 
 ```
-./release.sh [major|minor|patch]
+./bin/release.sh [major|minor|patch]
 ```
 
 This updates the version in `package.json`, pushes the commit and tag, and triggers a CI build of the image.
