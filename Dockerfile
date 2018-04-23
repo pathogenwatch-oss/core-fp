@@ -10,7 +10,7 @@ RUN mv ncbi-blast-2.7.1+/bin /blast && \
 WORKDIR /usr/local/cgps-core-fp
 
 COPY package.json /usr/local/cgps-core-fp/
-RUN npm install
+RUN npm install --production
 
 COPY build.sh build-library.sh index.js /usr/local/cgps-core-fp/
 COPY src /usr/local/cgps-core-fp/src/
