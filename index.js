@@ -149,6 +149,11 @@ async function build(references) {
   return fp.dump();
 }
 
+function handleError(error) {
+  logger("error")(error);
+  process.exit(1);
+}
+
 async function debug(queryPath) {
   logger("debug")(`Debugging ${queryPath} core with ${SCHEME}`);
   const config = await readConfig(SCHEME);
@@ -179,14 +184,14 @@ if (require.main === module) {
       .then(JSON.stringify)
       .then(console.log)
       .then(() => logger("debug")("Finished"))
-      .catch(logger("error"));
+      .catch(handleError);
   } else if (argv.command === "debug") {
     const { queryPath } = argv;
     debug(queryPath)
       .then(JSON.stringify)
       .then(console.log)
       .then(() => logger("debug")("Finished"))
-      .catch(logger("error"));
+      .catch(handleError);
   } else if (argv.command === "build") {
     const { references } = argv;
     build(references)
@@ -197,7 +202,7 @@ if (require.main === module) {
       })
       .then(console.log)
       .then(() => logger("debug")("Finished"))
-      .catch(logger("error"));
+      .catch(handleError);
   }
 }
 

@@ -23,6 +23,7 @@
     "debug": "^3.1.0",
     "distributions-poisson-cdf": "0.0.2",
     "hasha": "^3.0.0",
+    "lodash": "^4.17.5",
     "mkdirp-promise": "^5.0.1",
     "xml2js": "^0.4.19"
   }

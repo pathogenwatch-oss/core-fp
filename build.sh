@@ -36,4 +36,4 @@ else
 fi
 
 # The actual work.
-find ./schemes ${clean} -mindepth 1 -maxdepth 1 -type d | xargs -P ${nthreads} -I scheme ./build-library.sh scheme
+find ./schemes ${clean} -mindepth 1 -maxdepth 1 -type d | xargs -P ${nthreads} -I scheme bash -c "./build-library.sh scheme || exit 255"
