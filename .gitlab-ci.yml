@@ -21,8 +21,8 @@ deploy:
         --build-arg http_proxy=$http_proxy
         --build-arg https_proxy=$https_proxy
         --build-arg ftp_proxy=$https_proxy
-        -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
-    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+        -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME" .
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
   only:
     - tags
 
