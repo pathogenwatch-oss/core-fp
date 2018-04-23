@@ -1,3 +1,7 @@
+# CGPS Core-FP
+
+Identifies core genes from a sequence and compares them to a reference. The core is used for building trees.
+
 ## Create a core profile
 
 ```
@@ -8,7 +12,7 @@ For example:
 
 ```
 seq="../wgsa_data/saureus/example.fasta"
-docker run -i --rm -e WGSA_ORGANISM_TAXID=1280 -v $(cd $(dirname $seq) && pwd)/$(basename $seq):/data/$(basename $seq) registry.gitlab.com/cgps/cgps-core-fp:n6 query /data/$(basename $seq) > $(basename $seq '.fasta').core.json
+docker run -i --rm -e WGSA_ORGANISM_TAXID=1280 -v $(cd $(dirname $seq) && pwd)/$(basename $seq):/data/$(basename $seq) registry.gitlab.com/cgps/cgps-core-fp:latest query /data/$(basename $seq) > $(basename $seq '.fasta').core.json
 ```
 
 ## Run the tests
@@ -17,10 +21,16 @@ docker run -i --rm -e WGSA_ORGANISM_TAXID=1280 -v $(cd $(dirname $seq) && pwd)/$
 npm test
 ```
 
-## Build the container
+## Build the image
 
-docker build -t registry.gitlab.com/cgps/cgps-core-fp:<VERSION> .
+```
+./release.sh [major|minor|patch]
+```
 
-## Building the databases outside image
+This updates the version in `package.json`, pushes the commit and tag, and triggers a CI build of the image.
 
-docker run -it --rm -v $(pwd):/data -w /data --entrypoint bash cgps-core-fg:n1 build.sh
+## Building the databases outside of the image
+
+```
+docker run -it --rm -v $(pwd):/data -w /data --entrypoint bash registry.gitlab.com/cgps/cgps-core-fp:latest build.sh
+```
