@@ -1,8 +1,5 @@
 image: docker:latest
 
-services:
-  - docker:dind
-
 test:
   stage: test
   image: node:8
