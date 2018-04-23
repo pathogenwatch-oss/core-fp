@@ -1,4 +1,4 @@
-# CGPS Core-FP
+# CGPS Core-FP [![pipeline status](https://gitlab.com/cgps/cgps-core-fp/badges/master/pipeline.svg)](https://gitlab.com/cgps/cgps-core-fp/commits/master)
 
 Identifies core genes from a sequence and compares them to a reference. The core is used for building trees.
 
