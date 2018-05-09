@@ -102,8 +102,8 @@ class Core {
         queryOffset,
         refEnd: refBase === "-" ? refOffset : refOffset + 1,
         queryEnd: queryBase === "-" ? queryOffset : queryOffset + 1
-      }
-    }
+      };
+    };
 
     // Find just the variant positions
     const variants = [];
@@ -184,7 +184,7 @@ class Core {
       delete currentMutation.refEnd;
       delete currentMutation.queryEnd;
       mutations.push(currentMutation);
-    };
+    }
     return mutations;
   }
 
@@ -211,7 +211,7 @@ class Core {
   }
 
   addDebugStats(hit) {
-    const {hitId, hitStart, hitEnd} = hit;
+    const { hitId, hitStart, hitEnd } = hit;
     hit.complete = (Math.abs(hitStart - hitEnd) + 1) / this.config.geneLengths[hitId];
   }
 
