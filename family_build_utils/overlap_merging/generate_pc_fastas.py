@@ -1,6 +1,7 @@
-import sys
 import os
+import sys
 from pathlib import Path
+
 from Bio import SeqIO
 from Bio.Seq import Seq
 
@@ -24,8 +25,8 @@ for line in open(str(source_file), 'r').readlines():
 # Assuming a single
 assemblies = dict()
 for assembly_fasta in source_dir.iterdir():
-    if str(assembly_fasta).endswith('.fasta'):
-        name = os.path.basename(str(assembly_fasta)).replace('.fasta', '')
+    if str(assembly_fasta).endswith('.fasta') or str(assembly_fasta).endswith('.fa'):
+        name = os.path.basename(str(assembly_fasta)).replace('.fasta', '').replace('.fa', '')
         records = SeqIO.to_dict(SeqIO.parse(str(assembly_fasta), 'fasta'))
         assemblies[name] = records
 
@@ -33,7 +34,7 @@ for assembly_fasta in source_dir.iterdir():
 contigs = dict((el, []) for el in ids)
 for assembly_pc_file in source_dir.iterdir():
     if str(assembly_pc_file).endswith('.pc'):
-        name = os.path.basename(str(assembly_pc_file)).replace('.fasta.json.pc', '')
+        name = os.path.basename(str(assembly_pc_file)).replace('.fasta.json.pc', '').replace('.fa.json.pc', '')
         for line in open(str(assembly_pc_file), 'r').readlines():
             pc_data = line.split('\t')
             pc_id = pc_data[3]
