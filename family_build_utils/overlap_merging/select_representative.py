@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 from pathlib import Path
@@ -39,7 +40,8 @@ result = sorted(scores, key=scores.get, reverse=True)
 # for k in sorted(scores, key=scores.get, reverse=True):
 #     print(k, scores[k], sep=',', file=sys.stderr)
 
-m = name_p.match(result[0])
 # print(result[0], str(m))
 
-print(">" + m.group(1) + '\n' + str(sequences[result[0]].seq.upper()).replace('-', ''))
+family_name = os.path.basename(alignment_path).replace('.fna.ali', '')
+
+print(">" + family_name + '\n' + str(sequences[result[0]].seq.upper()).replace('-', ''))
