@@ -7,7 +7,7 @@
   ]
  },
  "minMatchCoverage": 80.0,
- "name": "Listeria monocytogenes",
+ "name": "Candida auris",
  "overlapThreshold": 40,
  "geneLengths": {
     "B8441_B9J08_000003": 1605,
