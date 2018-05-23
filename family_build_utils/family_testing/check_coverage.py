@@ -7,11 +7,14 @@ json_dir = Path(sys.argv[1])
 
 counts = defaultdict(lambda: 0)
 fragments = defaultdict(lambda: 0)
+total = 0
 
 for file in json_dir.iterdir():
 
     if not str(file).endswith('json'):
         continue
+
+    total += 1
 
     matches = jsonpickle.decode(file.read_text())['hits']
 
@@ -27,6 +30,8 @@ for file in json_dir.iterdir():
 
 with open('family_counts.csv', 'w') as fc:
     for family_id in counts:
+        if total == counts[family_id]:
+            continue
         print(family_id, counts[family_id], file=fc)
 
 with open('family_fragment_counts.csv', 'w') as ffc:
