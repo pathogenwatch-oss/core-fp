@@ -25,14 +25,14 @@ for file in json_dir.iterdir():
         if hit_id not in seen:
             seen.add(hit_id)
             counts[hit_id] += 1
-            if '*' in hit_id:
+            if 1 != match['complete']:
                 fragments[hit_id] += 1
 
-with open('family_counts.csv', 'w') as fc:
+with open('family_missing_counts.csv', 'w') as fc:
     for family_id in counts:
         if total == counts[family_id]:
             continue
-        print(family_id, counts[family_id], file=fc)
+        print(family_id, total - counts[family_id], file=fc)
 
 with open('family_fragment_counts.csv', 'w') as ffc:
     for family_id in fragments:
