@@ -5,8 +5,10 @@ from pathlib import Path
 
 json_dir = Path(sys.argv[1])
 
-counts = defaultdict(lambda: 0)
-fragments = defaultdict(lambda: 0)
+total_matches = defaultdict(lambda: 0)
+total_fragments = defaultdict(lambda: 0)
+assembly_with_complete = defaultdict(lambda: 0)
+assembly_only_fragment = defaultdict(lambda: 0)
 total = 0
 
 for file in json_dir.iterdir():
@@ -19,21 +21,44 @@ for file in json_dir.iterdir():
     matches = jsonpickle.decode(file.read_text())['hits']
 
     seen = set()
+    seen_fragments = set()
 
     for match in matches:
+
         hit_id = match['hitId']
-        if hit_id not in seen:
-            seen.add(hit_id)
-            counts[hit_id] += 1
-            if 1 != match['complete']:
-                fragments[hit_id] += 1
+        fragment = 1 != match['complete']
 
-with open('family_missing_counts.csv', 'w') as fc:
-    for family_id in counts:
-        if total == counts[family_id]:
+        # Update the total matches for that family
+        total_matches[hit_id] += 1
+
+        # Update the number of fragments for that family
+        if fragment:
+            total_fragments += 1
+
+        if hit_id in seen:
             continue
-        print(family_id, total - counts[family_id], file=fc)
 
-with open('family_fragment_counts.csv', 'w') as ffc:
-    for family_id in fragments:
-        print(family_id, fragments[family_id], file=ffc)
+        if fragment and hit_id in seen_fragments:
+            continue
+
+        if fragment:
+            seen_fragments.add(hit_id)
+        else:
+            seen.add(hit_id)
+            assembly_with_complete[hit_id] += 1
+
+    for family_id in seen_fragments:
+        if family_id not in seen:
+            assembly_only_fragment[family_id] += 1
+
+assembly_incomplete = {family_id: total - count for family_id, count in assembly_with_complete.items()}
+
+with open('family_stats.csv', 'w') as stats:
+    for family_id in assembly_with_complete:
+        print(assembly_incomplete[family_id],
+              assembly_only_fragment[family_id],
+              total_matches[family_id],
+              total_fragments[family_id],
+              sep='\t',
+              file=stats
+              )
