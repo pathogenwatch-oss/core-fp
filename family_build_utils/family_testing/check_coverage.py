@@ -33,11 +33,13 @@ for file in json_dir.iterdir():
 
         # Update the number of fragments for that family
         if fragment:
-            total_fragments += 1
+            total_fragments[hit_id] += 1
 
+        # If it's already dealt with, move on
         if hit_id in seen:
             continue
 
+        # fragment already counted
         if fragment and hit_id in seen_fragments:
             continue
 
