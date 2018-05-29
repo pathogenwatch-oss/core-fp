@@ -64,7 +64,8 @@ for file in json_dir.iterdir():
 assembly_incomplete = {family_id: total - count for family_id, count in assembly_with_complete.items()}
 
 with open('family_stats.csv', 'w') as stats:
-    print('family ID,Not perfect,Only fragment,Paralogs,Total matches,Total fragments')
+    print('Family ID', 'Not perfect', 'Only fragment', 'Paralogs', 'Total matches', 'Total fragments', sep='\t',
+          file=stats)
     for family_id in assembly_with_complete:
         print(family_id,
               assembly_incomplete[family_id],
