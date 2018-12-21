@@ -1,0 +1,23 @@
+{
+ "blastConfiguration": {
+  "gatheringEValue": 1e-35,
+  "gatheringPid": 80.0,
+  "maxMatches": 500,
+  "otherOptions": []
+ },
+ "geneLengths": {
+  "capsid": 312,
+  "envelope": 1512,
+  "ns1": 1056,
+  "ns2a": 678,
+  "ns2b": 390,
+  "ns3": 1851,
+  "ns4a": 461,
+  "ns4b": 742,
+  "ns5": 2709,
+  "premembrane": 504
+ },
+ "minMatchCoverage": 80.0,
+ "name": "Zika Virus",
+ "overlapThreshold": 40
+}
