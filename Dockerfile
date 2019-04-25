@@ -1,4 +1,4 @@
-FROM node:8
+FROM node:latest
 
 RUN apt-get update && apt-get install -y wget tar
 RUN wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.7.1/ncbi-blast-2.7.1+-x64-linux.tar.gz
