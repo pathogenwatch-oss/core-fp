@@ -6,3 +6,4 @@ family_build_utils/overlap_merging/__pycache__/
 .DS_Store
 Tmp
 venv/
+/temp/
