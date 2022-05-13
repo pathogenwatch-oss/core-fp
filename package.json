@@ -1,6 +1,6 @@
 {
   "name": "cgps-core-profile",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "Generate core profiles for genome assemblies",
   "main": "index.js",
   "scripts": {
