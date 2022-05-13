@@ -16,7 +16,7 @@ deploy:
   stage: deploy
   script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    - ./build-images $CI_COMMIT_REF_NAME
+    - ./build-images.sh $CI_COMMIT_REF_NAME
   only:
     - tags
 
