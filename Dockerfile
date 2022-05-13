@@ -40,13 +40,16 @@ COPY --from=code /usr/local/cgps-core-fp/node_modules /usr/local/cgps-core-fp/no
 
 FROM base as databases
 
-COPY schemes /usr/local/cgps-core-fp/schemes
+ARG species
 
 COPY build.sh /usr/local/cgps-core-fp/
 
 COPY build-library.sh /usr/local/cgps-core-fp/
 
-RUN mkdir -p $CORE_DB_ROOT && \
+COPY schemes/$species /usr/local/cgps-core-fp/schemes/$species
+
+RUN echo $( ls /usr/local/cgps-core-fp/schemes ) && \
+    mkdir -p $CORE_DB_ROOT && \
     bash build.sh && \
     rm -rf /usr/local/cgps-core-fp/schemes/*/references && \
     rm -f /usr/local/cgps-core-fp/schemes/*/core.csv && \
@@ -54,8 +57,14 @@ RUN mkdir -p $CORE_DB_ROOT && \
 
 FROM base
 
+ARG species
+
 COPY --from=databases /usr/local/cgps-core-fp/databases /usr/local/cgps-core-fp/databases
 
 COPY --from=databases /usr/local/cgps-core-fp/schemes /usr/local/cgps-core-fp/schemes
 
-ENTRYPOINT ["node", "/usr/local/cgps-core-fp/index.js"]
+ENV SPECIES=$species
+
+RUN echo "export WGSA_ORGANISM_TAXID=$SPECIES\nnode /usr/local/cgps-core-fp/index.js \$@" > /run.sh
+
+ENTRYPOINT ["/bin/bash", "/run.sh"]
