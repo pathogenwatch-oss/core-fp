@@ -29,3 +29,8 @@ TAG_BASE="${REGISTRY}":"${VERSION}"
 find ./schemes -mindepth 1 -maxdepth 1 -type d | \
   xargs -I taxid basename taxid | \
   xargs -P "${NTHREADS}" -I xxx sh -c 'echo ${1}-${2} && docker build --rm --build-arg species=${2} -t ${1}-${2} . && docker push ${1}-${2}' -- "${TAG_BASE}" xxx
+
+cd schemes
+
+docker build --rm -t "${REGISTRY}":schemes-"${VERSION}" .
+docker push "${REGISTRY}":schemes-"${VERSION}"
