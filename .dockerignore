@@ -1,2 +1,5 @@
+bin
+databases
 node_modules
 family_build_utils
+temp
