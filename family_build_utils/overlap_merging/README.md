@@ -22,7 +22,7 @@ docker build --rm -t registry.gitlab.com/cgps/cgps-core-fp:cholerae_test .
 
 ```
 e.g. to run on 7 cores:
-find . -name "*.fasta" -print0 | xargs -P 7 -0 -I fasta sh -c 'docker run -i --rm -e DEBUG="*,-trace*" -e WGSA_ORGANISM_TAXID=485 -v $(PWD):/data registry.gitlab.com/cgps/cgps-core-fp:new-gono-and-equi debug /data/${1} > ${1}.json' -- fasta
+find . -name "*.fasta" -print0 | xargs -P 7 -0 -I fasta sh -c 'docker run -i --rm -e DEBUG="*,-trace*" -v $(PWD):/data registry.gitlab.com/cgps/cgps-core-fp:test-244633 debug /data/${1} > ${1}.json' -- fasta
 ```
 2. Generate "pseudocontigs" by running `create_pseudo_contigs.py` on each assembly.
     * Creates an output file containing location, direction and family name.
