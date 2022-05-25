@@ -11,7 +11,8 @@ Pipeline for merging genes into 'pseudocontigs' & library validation
 find . -name "*.aln" -print0 | xargs -0 -I name sh -c 'python3 cgps-core-fp/family_build_utils/overlap_merging/select_representative.py ${1}' -- name > all_reps.fa
 cat all_reps.fa | tr '\n' ',' | tr '>' '\n' | awk 'NR > 1' | sed -e 's/,$//' -e 's/,/,1,/' -e 's/^/unknown,/' > core.csv
 awk -F ',' '{printf "    \"%s\": %s,\n", $2, length($4)}' core.csv >> lengths.jsn
-# Edit the config.jsn
+# Manually edit the config.jsn
+# Also the line below produces the count, but not the required JSON format. Manual edit the resulting file.
 awk '{print $2}' lengths.jsn | sed 's/,//' | paste -s -d+ - | bc > 666_ks.jsn
 docker build --rm -t registry.gitlab.com/cgps/cgps-core-fp:cholerae_test .
 ```
