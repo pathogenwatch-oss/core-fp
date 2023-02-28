@@ -21,16 +21,15 @@ docker run -i -v $(cd $(dirname $seq) && pwd)/$(basename $seq):/data/$(basename 
 npm test
 ```
 
-## Build the image
-
-```
-./bin/release.sh [major|minor|patch]
-```
-
-This updates the version in `package.json`, pushes the commit and tag, and triggers a CI build of the image.
-
 ## Building the databases outside of the image
 
 ```
 docker run -it --rm -v $(pwd):/data -w /data --entrypoint bash registry.gitlab.com/cgps/cgps-core-fp:latest build.sh
+```
+
+## Creating the images for production
+
+Run the `build-images.sh` script:
+```
+./build-images.sh v2.0.2
 ```

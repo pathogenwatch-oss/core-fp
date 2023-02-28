@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Builds the schemes within the docker image.
+
 # Accepts a single numerical argument to specify the number of threads to use. Otherwise defaults to all available - 1
 set -eu -o pipefail
 export DEBUG=${DEBUG:-"*,-trace*"}

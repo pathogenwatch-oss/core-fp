@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Script to build a scheme for local development.
+
 set -eu -o pipefail
 
 # Not sure what this is used for.

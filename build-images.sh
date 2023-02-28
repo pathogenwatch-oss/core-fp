@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# Build the images for PW
 set -eu -o pipefail
 
 VERSION=$1
@@ -23,7 +24,8 @@ else
   NTHREADS=$3
   echo "var is set to 'NTHREADS'"
 fi
-
+# The multithreading appeared to be causing an issue in the build, but it wasn't clear. Needs further testing.
+NTHREADS=1
 TAG_BASE="${REGISTRY}":"${VERSION}"
 
 find ./schemes -mindepth 1 -maxdepth 1 -type d | \
