@@ -18,7 +18,7 @@ print("Reading from ", str(source_dir), file=sys.stderr)
 # First read in the list of pseudocontigs
 ids = set()
 for line in open(str(source_file), 'r').readlines():
-    contig_name = line.replace('\n', '').replace('|', '__').split('\t')[0]
+    contig_name = line.strip().replace('|', '__').split('\t')[0]
     ids.add(contig_name)
 
 # Then read in the FASTAs, keyed by ID
@@ -34,7 +34,7 @@ for assembly_fasta in source_dir.iterdir():
 contigs = dict((el, []) for el in ids)
 for assembly_pc_file in source_dir.iterdir():
     if str(assembly_pc_file).endswith('.pc'):
-        name = os.path.basename(str(assembly_pc_file)).replace('.fasta.json.pc', '').replace('.fa.json.pc', '')
+        name = os.path.basename(str(assembly_pc_file)).replace('.json.pc', '').replace('.core', '').replace('.fasta', '').replace('.fa', '')
         for line in open(str(assembly_pc_file), 'r').readlines():
             pc_data = line.split('\t')
             pc_id = pc_data[3]
