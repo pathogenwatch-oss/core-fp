@@ -15,7 +15,7 @@ awk -F ',' '{printf "    \"%s\": %s,\n", $2, length($4)}' core.csv >> lengths.js
 # Manually edit the config.jsn
 # Also the line below produces the count, but not the required JSON format. Manual edit the resulting file.
 awk '{print $2}' lengths.jsn | sed 's/,//' | paste -s -d+ - | bc > 666_ks.jsn
-docker build --rm -t registry.gitlab.com/cgps/cgps-core-fp:cholerae_test .
+docker build --rm --build-arg species=666 -t registry.gitlab.com/cgps/cgps-core-fp:cholerae_test .
 ```
 
 ## Refinement Steps
@@ -24,7 +24,7 @@ docker build --rm -t registry.gitlab.com/cgps/cgps-core-fp:cholerae_test .
 
 ```
 e.g. to run on 7 cores:
-find . -name "*.fasta" -print0 | xargs -P 7 -0 -I fasta sh -c 'docker run -i --rm -e DEBUG="*,-trace*" -v $(PWD):/data registry.gitlab.com/cgps/cgps-core-fp:test-244633 debug /data/${1} > ${1}.json' -- fasta
+find . -name "*.fasta" -print0 | xargs -P 7 -0 -I fasta sh -c 'docker run -i --rm -e DEBUG="*,-trace*" -v $(pwd):/data registry.gitlab.com/cgps/cgps-core-fp:test-244633 debug /data/${1} > ${1}.json' -- fasta
 ```
 
 2. Generate "pseudocontigs" by running `create_pseudo_contigs.py` on each assembly.
@@ -32,7 +32,7 @@ find . -name "*.fasta" -print0 | xargs -P 7 -0 -I fasta sh -c 'docker run -i --r
    * Contains a known bug that means encapsulated overlaps are not correctly detected.
 
 ```
-find . -name "*.json" -print0 | xargs -I json -P 7 -0 sh -c 'python3 create_pseudo_contigs.py ${1} > ${1}.pc' -- json
+find . -name "*.json" -print0 | xargs -I json -P 7 -0 sh -c 'python3 ../../../family_build_utils/overlap_merging/create_pseudo_contigs.py ${1} > ${1}.pc' -- json
 
 Contig ID, Start, Stop, Resolved Name, Resolved orientation, Merged Families ('-' = reverse strand, '*' = fragment), Length
 SE4047,2242945,2243967,trsA,-,trsA-,1023
@@ -46,6 +46,7 @@ SE4047,2245336,2246955,SEQ_2233,+,SEQ_2233,1620
 
 ```
 find . -name "*.pc" -print0 | xargs -I json -P 7 -0 sh -c 'python3 ../../../family_build_utils/overlap_merging/aggregate_family_matches.py ${1} > ${1}.summary' -- json
+python paralog_distribution.py .
 ```
 
 4. Create family distribution file by running `complete_only.py`
@@ -54,7 +55,7 @@ find . -name "*.pc" -print0 | xargs -I json -P 7 -0 sh -c 'python3 ../../../fami
 
 ```
 e.g. In the directory with the .pc files:
-python3 complete_only.py . > complete_families.lst
+python3 ../../../family_build_utils/overlap_merging/complete_only.py . > complete_families.lst
 ```
 
 5. Extract all the new merged family ids from that list with `grep '__' complete_families.lst > selected_pc.txt`

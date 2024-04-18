@@ -4,10 +4,10 @@ RUN apt-get update -y && \
     apt-get --no-install-recommends install -y wget tar && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
-    wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.7.1/ncbi-blast-2.7.1+-x64-linux.tar.gz && \
-    tar xzvf ncbi-blast-2.7.1+-x64-linux.tar.gz && \
+    wget --no-check-certificate https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.15.0/ncbi-blast-2.15.0+-x64-linux.tar.gz && \
+    tar xzvf ncbi-blast-2.15.0+-x64-linux.tar.gz && \
     mkdir /blast && \
-    mv ncbi-blast-2.7.1+/bin/blastn ncbi-blast-2.7.1+/bin/makeblastdb /blast && \
+    mv ncbi-blast-2.15.0+/bin/blastn ncbi-blast-2.15.0+/bin/makeblastdb /blast && \
     rm -rf ncbi-blast*
 
 FROM node:13 as code

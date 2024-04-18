@@ -1,1 +1,3 @@
 Dockerfile
+workings/**
+family_build_utils/**

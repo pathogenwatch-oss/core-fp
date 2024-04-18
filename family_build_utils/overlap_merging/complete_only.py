@@ -6,23 +6,40 @@ from operator import itemgetter
 
 
 def extract_complete():
-    names = set()
-    for line in file.open('r').readlines():
-        name = line.split('\t')[3].replace('\n', '') # .replace('*', '') hack for pneumo to resolve most missing matches
-        if '*' not in name:
-            names.add(name)
-    return names
+    complete = set()
+    all_hits = set()
+    for line in file.open("r").readlines():
+        # name = line.split('\t')[3].replace('\n', '') # .replace('*', '') hack for pneumo to resolve most missing matches
+        full_name = line.split("\t")[3]
+        name = full_name.replace("\n", "").replace("*", "")
+        if "*" not in full_name:
+            complete.add(name)
+        all_hits.add(name)
+    return complete, all_hits
 
 
 directory = Path(sys.argv[1])
 
-all_families = []
+complete_aggregate = []
+all_aggregate = []
+file_counter = 0
 for file in directory.iterdir():
-    if str(file).endswith('.pc'):
-        name_set = extract_complete()
-        all_families.extend(name_set)
+    if str(file).endswith(".pc"):
+        file_counter += 1
+        complete_matches, all_matches = extract_complete()
+        complete_aggregate.extend(complete_matches)
+        all_aggregate.extend(all_matches)
 
-counter = Counter(all_families)
+all_counter = Counter(all_aggregate)
+complete_counter = Counter(complete_aggregate)
 
-for family, count in sorted(counter.items(), key=itemgetter(1)):
-    print(family, count, sep='\t')
+print("Family,All,All %,Complete,Complete %")
+for family, count in sorted(all_counter.items(), key=itemgetter(1)):
+    print(
+        family,
+        count,
+        count / file_counter,
+        complete_counter[family],
+        complete_counter[family] / file_counter,
+        sep=",",
+    )
